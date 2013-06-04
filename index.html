@@ -20,11 +20,6 @@
     height: 100%;
     width: 190px;
   }
-
-  .column .item {
-    position: absolute;
-    left: 0;
-  }
   
   .column img {
     margin: 5px 0 0 5px;
@@ -44,19 +39,15 @@
   <script src="/javascripts/underscore.js"></script>
   <script src="/javascripts/peek.js"></script>
   <script>
+
+  var peek = new Peek("#peek");
   
-  Zepto(function($) {
-  
-    var peek = new Peek("#peek");
-    
-    $.ajax({
-      url: "/peek.json",
-      dataType: "json",
-      success: function(data) {
-        peek.start(data);
-      }
-    });
-    
+  $.ajax({
+    url: "/peek.json",
+    dataType: "json",
+    success: function(data) {
+      peek.start(data);
+    }
   });
     
   </script>

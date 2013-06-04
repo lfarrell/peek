@@ -203,6 +203,7 @@ var Column = function() {
   this.bottom = 0;
   
   this.offset = -(20 + Math.floor(Math.random() * 100));
+  $(this.element).css({ "margin-top": this.offset });
 }
 
 Column.prototype.getTopHeight = function() {
@@ -233,61 +234,38 @@ Column.prototype.update = function(isInitialLoad) {
   this.top = 0;
   this.bottom = this.items.length;
 
-  // Slide removed items out, removing them from the document when the transition finishes
-  
-  top = this.offset;
-  
-  _.each(removed.reverse(), _.bind(function(item) {
-    if (item.element.parentNode) {
-      top -= item.getHeight();
-      $(item.element).animate({ top: top + "px" }, 1000, "ease", function() { $(item.element).remove() });
-    }
-  }, this));
-  
   // Append added items to the element
 
   _.each(added, _.bind(function(item) {
     this.element.appendChild(item.element);
   }, this));
-  
-  // Slide added items in and existing items into the correct position
+
+  // If there were removed items, slide column so that removed items are out of view, removing them from the document when the transition finishes.
   
   if (removed.length > 0) {
-  
-    top = this.offset + _.reduce(existing, function(h, i) { console.log(i.getHeight()); return h + i.getHeight(); }, 0);
     
-    _.each(added, _.bind(function(item) {
-      item.element.style.top = top + "px";
-      top += item.getHeight();
-    }, this));
-
-    top = this.offset;
-
-    _.each(this.items, function(item) {
-      $(item.element).animate({ top: top + "px" }, 1000, "ease");
-      top += item.getHeight();
-    });
+    var height = _.reduce(removed, function(h, i) { return h + i.getHeight(); }, 0);
     
-  } else {
-  
-    _.each(added, _.bind(function(item) {
-      item.element.style.opacity = "0";
-      $(item.element).animate({ opacity: 1 }, 1000, "ease");
+    $(this.element).animate({ "margin-top": (this.offset - height) + "px" }, 1000, "ease", _.bind(function() {
+      
+      _.each(removed, _.bind(function(item) {
+        if (item.element.parentNode) {
+          $(item.element).remove();
+        }
+      }, this));
+      
+      $(this.element).css({ "margin-top": this.offset });
+      
     }, this));
-
-    top = this.offset;
-
-    _.each(this.items, function(item) {
-      item.element.style.top = top + "px";
-      top += item.getHeight();
-    });
     
   }
   
-  // Ensure the top item has the "top" class
+  // Animate opacity of added items
   
-  if (this.items[0])
-    $(this.items[0].element).addClass("top");
+  _.each(added, _.bind(function(item) {
+    item.element.style.opacity = "0";
+    $(item.element).animate({ opacity: 1 }, 1000, "ease");
+  }, this));
   
 }
 
