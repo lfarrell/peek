@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Carolina Digital Repository</title>
+  <link rel="stylesheet" href="stylesheets/reset.css">
+  <style>
+  
+  #peek {
+    background: #ccc;
+    position: absolute;
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+  }
+
+  .column {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    width: 190px;
+  }
+
+  .column .item {
+    position: absolute;
+    left: 0;
+  }
+  
+  .column img {
+    margin: 5px 0 0 5px;
+    width: 185px;
+    display: block;
+    display: block;
+    background: #fff;
+  }
+    
+  </style>
+</head>
+<body>
+  
+  <div id="peek"></div>
+  
+  <script src="/javascripts/zepto.js"></script>
+  <script src="/javascripts/underscore.js"></script>
+  <script src="/javascripts/peek.js"></script>
+  <script>
+  
+  Zepto(function($) {
+  
+    var peek = new Peek("#peek");
+    
+    $.ajax({
+      url: "/peek.json",
+      dataType: "json",
+      success: function(data) {
+        peek.start(data);
+      }
+    });
+    
+  });
+    
+  </script>
+  
+</body>
+</html>
