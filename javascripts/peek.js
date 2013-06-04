@@ -23,7 +23,7 @@ Peek.prototype.start = function(images) {
   this.index = 0;
   this.images = shuffle(images);
   
-  $(window).on("resize", _.bind(this.layout, this));
+  $(window).on("resize", _.debounce(_.bind(this.layout, this), 300));
   setInterval(_.bind(this.load, this), 100);
   setInterval(_.bind(this.fill, this), 100);
   setInterval(_.bind(this.shift, this), 4000);
@@ -36,71 +36,70 @@ Peek.prototype.start = function(images) {
 Peek.prototype.layout = function() {
   
   var columnWidth = 190;
-  var parentWidth = $(this.element).width();
+  var parentWidth = $(this.element.parentNode).width();
   
   // Amount of space taken up by left and right columns
   
-  var leftRightSpace = parentWidth - columnWidth;
-  var leftSpace = Math.floor(leftRightSpace / 2);
-  var rightSpace = Math.ceil(leftRightSpace / 2);
+  var partialSpace = Math.ceil((parentWidth - columnWidth) / 2);
   
   // How many columns we want
   
-  var leftCount = Math.ceil(leftSpace / columnWidth);
-  var rightCount = Math.ceil(rightSpace / columnWidth);
-  
-  // Where we want them to be
-  
-  var centerOffset = Math.round(parentWidth / 2 - columnWidth / 2);
-  var leftOffset = centerOffset - (leftCount * columnWidth);
+  var partialCount = Math.ceil(partialSpace / columnWidth);
+  var count = 1 + (partialCount * 2);
   
   // If there are no columns, add a center column
+  
+  var addedCenter = false;
   
   if (this.columns.length == 0) {
     var column = new Column();
     this.columns.push(column);
     this.element.appendChild(column.element);
+    
+    addedCenter = true;
   }
   
   // How many columns do we currently have?
   
-  var currentLeftCount = Math.floor((this.columns.length - 1) / 2);
-  var currentRightCount = Math.ceil((this.columns.length - 1) / 2);
+  var currentPartialCount = Math.ceil((this.columns.length - 1) / 2);
   
   // Add columns if we don't have enough, remove columns if we have too many
   
   // FIXME: It may be that filling columns is more costly than just keeping them onscreen -- so we could try never removing columns and only filling/shifting those onscreen.
   
-  if (currentLeftCount < leftCount) {
-    _.times(leftCount - currentLeftCount, _.bind(function() {
-      var column = new Column();
+  if (currentPartialCount < partialCount) {
+    _.times(partialCount - currentPartialCount, _.bind(function() {
+      var column;
+      
+      column = new Column();
       this.columns.unshift(column);
       this.element.insertBefore(column.element, this.element.firstChild);
-    }, this));
-  } else if (currentLeftCount > leftCount) {
-    _.times(currentLeftCount - leftCount, _.bind(function() {
-      var column = this.columns.shift(column);
-      this.element.removeChild(column.element);
-    }, this));
-  }
-  
-  if (currentRightCount < rightCount) {
-    _.times(rightCount - currentRightCount, _.bind(function() {
-      var column = new Column();
+      
+      column = new Column();
       this.columns.push(column);
       this.element.appendChild(column.element);
     }, this));
-  } else if (currentRightCount > rightCount) {
-    _.times(currentRightCount - leftCount, _.bind(function() {
-      var column = this.columns.pop(column);
+  } else if (currentPartialCount > partialCount) {
+    _.times(currentPartialCount - partialCount, _.bind(function() {
+      var column;
+      
+      column = this.columns.shift(column);
+      this.element.removeChild(column.element);
+      
+      column = this.columns.pop(column);
       this.element.removeChild(column.element);
     }, this));
   }
   
-  // Set position of columns
+  // Set position of columns if counts changed
   
-  for (var i = 0; i < this.columns.length; i++) {
-    this.columns[i].element.style.left = leftOffset + (i * columnWidth) + "px";
+  if (addedCenter || currentPartialCount != partialCount) {
+    for (var i = 0; i < this.columns.length; i++) {
+      this.columns[i].element.style.left = (i * columnWidth) + "px";
+    }
+  
+    this.element.style.width = (columnWidth * count) + "px"
+    this.element.style.marginLeft = -Math.round((columnWidth * count) / 2) + "px";
   }
   
 }
@@ -264,7 +263,7 @@ Column.prototype.update = function(isInitialLoad) {
   
   _.each(added, _.bind(function(item) {
     item.element.style.opacity = "0";
-    $(item.element).animate({ opacity: 1 }, 500, $.bez([0.25, 0.1, 0.25, 1]));
+    $(item.element).animate({ opacity: 1 }, 500);
   }, this));
   
 }
