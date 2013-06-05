@@ -8,7 +8,7 @@ function Peek(element) {
 
 Peek.prototype.start = function(images) {
   
-  // fisher-yates shuffle
+  // fisher-yates shuffle (in-place, returns reference)
   
   function shuffle(a) {
     for (var i = a.length - 2; i > 0; i--) {
@@ -20,10 +20,9 @@ Peek.prototype.start = function(images) {
     return a;
   }
   
-  this.index = 0;
   this.images = shuffle(images);
   
-  $(window).on("resize", _.debounce(_.bind(this.layout, this), 300));
+  $(window).on("resize", _.debounce(_.bind(this.layout, this), 100));
   setInterval(_.bind(this.load, this), 100);
   setInterval(_.bind(this.fill, this), 100);
   setInterval(_.bind(this.shift, this), 4000);
@@ -84,9 +83,11 @@ Peek.prototype.layout = function() {
       var column;
       
       column = this.columns.shift(column);
+      this.images = this.images.concat(_.pluck(column.items, "spec"));
       this.element.removeChild(column.element);
       
       column = this.columns.pop(column);
+      this.images = this.images.concat(_.pluck(column.items, "spec"));
       this.element.removeChild(column.element);
     }, this));
   }
@@ -134,19 +135,21 @@ Peek.prototype.load = function() {
   
   _.times(count, _.bind(function() {
     
-    var spec = this.images[this.index];
+    var spec = this.images.shift();
     
-    this.index = (this.index + 1) % this.images.length;
+    if (spec) {
     
-    // Add completed items to the queue. Ignore errors.
+      // Add completed items to the queue. Ignore errors.
     
-    Item.get(
-      spec,
-      _.bind(function(item) { this.queue.push(item); this.inprogress--; }, this),
-      _.bind(function() { this.inprogress--; }, this)
-    );
+      Item.get(
+        spec,
+        _.bind(function(item) { this.queue.push(item); this.inprogress--; }, this),
+        _.bind(function() { this.inprogress--; }, this)
+      );
     
-    this.inprogress++;
+      this.inprogress++;
+      
+    }
     
   }, this));
    
@@ -177,7 +180,11 @@ Peek.prototype.shift = function() {
   
   var column = shiftable[Math.floor(Math.random() * shiftable.length  )];
   
-  column.shift();
+  var item = column.shift();
+  
+  if (item) {
+    this.images.push(item.spec);
+  }
   
   while (this.queue.length > 0 && column.getUnfilledHeight() > 0) {
     column.push(this.queue.shift());
@@ -218,8 +225,12 @@ Column.prototype.push = function(item) {
 }
 
 Column.prototype.shift = function() {
+  var item = this.items[this.top];
+  
   this.top = Math.min(this.top + 1, this.items.length);
   this.bottom = Math.max(this.bottom, this.top);
+  
+  return item;
 }
 
 Column.prototype.update = function(isInitialLoad) {
@@ -269,13 +280,12 @@ Column.prototype.update = function(isInitialLoad) {
 }
 
 
-var Item = function(image, pid, title) {
+var Item = function(image, spec) {
   
   this.image = image;
-  this.pid = pid;
-  this.title = title;
+  this.spec = spec;
   
-  this.element = $("<div class=\"item\" title=\"" + title + "\"><a href=\"https://cdr.lib.unc.edu/record?id=" + pid + "\"></a></div>").get(0);
+  this.element = $("<div class=\"item\" title=\"" + this.spec.title + "\"><a href=\"https://cdr.lib.unc.edu/record?id=" + this.spec.pid + "\"></a></div>").get(0);
   $(this.element).find("a").append(this.image);
   
 }
@@ -285,7 +295,7 @@ Item.get = function(spec, complete, error) {
   var img = document.createElement("img");
   
   img.addEventListener("load", function() {
-    complete(new Item(img, spec.pid, spec.title));
+    complete(new Item(img, spec));
   }, false);
   
   img.addEventListener("error", function() {
