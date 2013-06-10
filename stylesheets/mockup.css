@@ -182,19 +182,51 @@ body.peek #exit {
   left: 50%;
 }
 
-#peek-inner .column {
+#peek .column {
   position: absolute;
   top: 0;
   height: 100%;
   width: 190px;
 }
 
-#peek-inner .column img {
+#peek .column img {
   margin: 5px 0 0 5px;
   width: 185px;
   display: block;
   background: #fff;
   box-shadow: 0 0 3px rgba(0, 0, 0, 0.2);
+}
+
+#peek .item {
+  position: relative;
+}
+
+#peek .description {
+  position: absolute;
+  bottom: 0;
+  left: 5px;
+  background: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  font-size: 12px;
+  padding: 5px;
+  line-height: 14px;
+  -webkit-font-smoothing: antialiased;
+}
+
+#peek .title {
+  font-weight: bold;
+}
+
+#peek .other {
+  margin-top: 4px;
+}
+
+#peek .description {
+  opacity: 0;
+}
+
+#peek .item:hover .description {
+  opacity: 1.0;
 }
 
 

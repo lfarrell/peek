@@ -285,10 +285,21 @@ var Item = function(image, spec) {
   this.image = image;
   this.spec = spec;
   
-  this.element = $("<div class=\"item\" title=\"" + this.spec.title + "\"><a href=\"https://cdr.lib.unc.edu/record?id=" + this.spec.pid + "\"></a></div>").get(0);
-  $(this.element).find("a").append(this.image);
+  this.element = $(_.template(Item.template, spec, { variable: "spec" })).get(0);
+  $(this.element).find(".image").append(this.image);
   
 }
+
+Item.template = "<div class=\"item\"> \
+  <a href=\"https://cdr.lib.unc.edu/record?id=<%= spec.pid %>\"> \
+    <div class=\"image\"></div> \
+    <div class=\"description\"> \
+      <div class=\"title\"><%= spec.title %></div> \
+      <% if (spec.creators.length > 0) { %><div class=\"other\"><%= spec.creators.join(\"; \") %></div><% } %> \
+      <% if (spec.collection) { %><div class=\"other\"><%= spec.collection %></div><% } %> \
+    </div> \
+  </a> \
+</div>";
 
 Item.get = function(spec, complete, error) {
   
