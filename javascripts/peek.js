@@ -28,6 +28,17 @@ Peek.prototype.start = function(images) {
   setInterval(_.bind(this.shift, this), 4000);
   setInterval(_.bind(this.update, this), 1000);
   
+  // If we're hovering over a column, don't shift that column
+  
+  $(this.element).on("mouseout", ".column", _.bind(function(e) {
+    delete this.hover;
+  }, this));
+  
+  $(this.element).on("mouseover", ".column", _.bind(function(e) {
+    var element = $(e.target).closest(".column").get(0);
+    this.hover = _.find(this.columns, function(c) { return c.element === element; });
+  }, this));
+  
   this.layout();
   
 }
@@ -172,7 +183,7 @@ Peek.prototype.shift = function() {
     return;
   }
   
-  var shiftable = _.filter(this.columns, _.bind(function(c) { return c != this.hover; }, this));
+  var shiftable = _.filter(this.columns, _.bind(function(c, i) { return c !== this.hover; }, this));
   
   if (shiftable.length == 0) {
     return;
