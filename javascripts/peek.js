@@ -256,7 +256,7 @@ Column.prototype.update = function(isInitialLoad) {
     
     var height = _.reduce(removed, function(h, i) { return h + i.getHeight(); }, 0);
     
-    $(this.element).animate({ "margin-top": (this.offset - height) + "px" }, 1000, $.bez([0.25, 0.1, 0.25, 1]), _.bind(function() {
+    $(this.element).animate({ "margin-top": (this.offset - height) + "px" }, 1000, "ease", _.bind(function() {
       
       _.each(removed, _.bind(function(item) {
         if (item.element.parentNode) {

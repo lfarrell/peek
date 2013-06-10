@@ -4,28 +4,36 @@
   <meta charset="utf-8">
   <title>Carolina Digital Repository</title>
   <link rel="stylesheet" href="stylesheets/reset.css">
-  <link rel="stylesheet" href="stylesheets/plain.css">
+  <link rel="stylesheet" href="stylesheets/mockup.css">
 </head>
 <body>
   
-  <div id="fake-header">
+  <div id="header">
   </div>
   
-  <div id="peek-wrap">
-    <div id="overlay">
-      <div id="expand">
-        <h1><img src="images/arrow.png"> A look inside the CDR</h1>
-      </div>
+  <div id="wrap">
+    <div id="peek">
+      <div id="peek-inner"></div>
     </div>
     
-    <div id="peek"></div>
-  </div>
-  
-  <div id="headline">
-    <h1>Preserve, share, and promote your scholarly&nbsp;and&nbsp;creative&nbsp;work.</h1>
+    <div id="enter">
+      <div id="enter-inner">
+        <a href="#peek">⬇ A Look inside the CDR</a>
+      </div>
+    </div>
+
+    <div id="exit">
+      <div id="exit-inner">
+        <a href="#">⬅ Back to the Homepage</a>
+      </div>
+    </div>
   </div>
   
   <div id="about">
+  
+    <div id="headline">
+      <h1>Preserve, share, and promote your scholarly&nbsp;and&nbsp;creative&nbsp;work.</h1>
+    </div>
 
     <div class="row">
       <div class="half" id="how">
@@ -48,28 +56,43 @@
       <div class="half" id="case-study-illustration-placeholder"></div>
     
       <div class="half" id="case-study-content">
-        <h1>The Research Libraries of Archaeology Preserves 75 Years of Photographs and Data in the CDR</h1>
-      
-        <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. <a href="#">See the collection</a>.</p>
+        <h1>CDR and RLA staff work to preserve and provide access to digital research collections</h1>
+
+        <p>Founded in 1939, the Research Laboratories of Archaeology (RLA) was the first center for the study of North Carolina archaeology. Serving the interests of students, scholars, and the general public, it is currently one of the leading institutes for archaeological teaching and research in the South. Located within the University of North Carolina at Chapel Hill's College of Arts and Sciences, it provides support for faculty and students working not only in North Carolina, but also throughout the Americas and overseas.</p>
+
+        <p>With one of the nation's finest collections of archaeological materials from the South, the RLA curates more than seven million artifacts along with more than 60,000 photographic negatives, photographs, and slides. Over the past 70 years, virtually all of the major discoveries in the understanding of North Carolina's ancient past can be attributed to the RLA or to researchers trained there.</p>
+
+        <p>The Carolina Digital Repository is working with RLA staff to to preserve their large collection of photographs, slides, and publications, and to provide access to those collections online.</p>
       </div>
     </div>
     
   </div>
   
-  <script src="/javascripts/jquery.js"></script>
-  <script src="/javascripts/bez.js"></script>
-  <script src="/javascripts/underscore.js"></script>
-  <script src="/javascripts/peek.js"></script>
+  <div id="footer">
+  </div>
+  
+  <script src="javascripts/zepto.js"></script>
+  <!-- <script src="javascripts/bez.js"></script> -->
+  <script src="javascripts/underscore.js"></script>
+  <script src="javascripts/peek.js"></script>
   <script>
 
-  var peek = new Peek("#peek");
+  var peek = new Peek("#peek-inner");
   
   $.ajax({
-    url: "/peek.json",
+    url: "peek.json",
     dataType: "json",
     success: function(data) {
       peek.start(data);
     }
+  });
+  
+  $("#enter").on("click", function() {
+    $(document.body).addClass("peek");
+  });
+  
+  $("#exit").on("click", function() {
+    $(document.body).removeClass("peek");
   });
     
   </script>
