@@ -87,7 +87,7 @@ body {
 #enter a {
   display: block;
   position: absolute;
-  bottom: 0;
+  top: 452px;
   left: 20px;
   padding: 15px 20px;
   
@@ -96,6 +96,7 @@ body {
   font-family: "Avenir Next", helvetica, sans-serif;
   font-weight: 600;
   font-size: 18px;
+  line-height: 18px;
   text-decoration: none;
   
   border-top-left-radius: 5px;
@@ -130,38 +131,6 @@ body {
 
 #exit a:hover {
   background: rgba(0, 0, 0, 0.9);
-}
-
-/* peek mode styles */
-
-body.peek {
-  overflow: hidden;
-}
-  
-body.peek #header, body.peek #about, body.peek #footer {
-  opacity: 0;
-  pointer-events: none;
-}
-
-#header, #about, #footer, #exit {
-  -webkit-transition-property: opacity;
-  -webkit-transition-duration: 0.5s;
-}
-
-body.peek #wrap {
-  height: 100%;
-}
-
-body.peek #enter {
-  display: none;
-}
-
-#exit {
-  opacity: 0;
-}
-
-body.peek #exit {
-  opacity: 1.0;
 }
 
 

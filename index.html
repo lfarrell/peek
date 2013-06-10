@@ -77,6 +77,64 @@
   <script src="javascripts/peek.js"></script>
   <script>
 
+  var Reveal = {
+    fullscreen: false,
+    
+    set: function(fullscreen, animate) {
+      if (typeof animate === "undefined") {
+        animate = true;
+      }
+      
+      this.fullscreen = fullscreen;
+      this._transition(animate);
+    },
+  
+    _transition: function(animate) {
+      
+      if (this.fullscreen) {
+        
+        window.scrollTo(0, 0);
+        
+        $(document.body).css({ overflow: "hidden" });
+        $("#wrap").css({ height: "100%" });
+        
+        if (animate) {
+          $("#header, #about, #footer, #enter").animate({ opacity: 0.0 }, 300, "linear", _.bind(this._finish, this));
+        } else {
+          $("#header, #about, #footer, #enter").css({ opacity: 0.0 });
+          this._finish();
+        }
+        
+      } else {
+        
+        $(document.body).css({ overflow: "auto" });
+        $("#header, #about, #footer, #enter").show();
+        
+        if (animate) {
+          $("#header, #about, #footer, #enter").animate({ opacity: 1.0 }, 300, "linear", _.bind(this._finish, this));
+        } else {
+          $("#header, #about, #footer, #enter").css({ opacity: 1.0 });
+          this._finish();
+        }
+        
+      }
+      
+    },
+
+    _finish: function() {
+      
+      if (this.fullscreen) {
+        $("#header, #about, #footer, #enter").hide();
+        $(document.body).addClass("fullscreen");
+      } else {
+        $("#wrap").css({ height: null });
+        $(document.body).removeClass("fullscreen");
+      }
+      
+    }
+  };
+
+
   var peek = new Peek("#peek-inner");
   
   $.ajax({
@@ -92,7 +150,7 @@
   });
   
   $(window).on("hashchange", function() {
-    $(document.body).toggleClass("peek", window.location.hash == "#peek");
+    Reveal.set(window.location.hash == "#peek", true);
   });
   
   $(document).on("keydown", function(e) {
@@ -101,7 +159,7 @@
     }
   });
   
-  $(document.body).toggleClass("peek", window.location.hash == "#peek");
+  Reveal.set(window.location.hash == "#peek", false);
     
   </script>
   
