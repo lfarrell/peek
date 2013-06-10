@@ -65,6 +65,7 @@ body {
 
 #about {
   margin-top: 500px;
+  background: #fff;
 }
 
 #enter {
@@ -106,10 +107,6 @@ body {
 #enter:hover a {
   background: rgba(0, 0, 0, 0.9);
 }
-
-#exit {
-  display: none;
-}
   
 #exit a {
   display: block;
@@ -135,9 +132,20 @@ body {
   background: rgba(0, 0, 0, 0.9);
 }
 
+/* peek mode styles */
+
+body.peek {
+  overflow: hidden;
+}
   
 body.peek #header, body.peek #about, body.peek #footer {
-  display: none;
+  opacity: 0;
+  pointer-events: none;
+}
+
+#header, #about, #footer, #exit {
+  -webkit-transition-property: opacity;
+  -webkit-transition-duration: 0.5s;
 }
 
 body.peek #wrap {
@@ -148,8 +156,12 @@ body.peek #enter {
   display: none;
 }
 
+#exit {
+  opacity: 0;
+}
+
 body.peek #exit {
-  display: inherit;
+  opacity: 1.0;
 }
 
 
