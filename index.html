@@ -95,6 +95,12 @@
     $(document.body).toggleClass("peek", window.location.hash == "#peek");
   });
   
+  $(document).on("keydown", function(e) {
+    if (e.keyCode == 27) {
+      window.location.hash = "";
+    }
+  });
+  
   $(document.body).toggleClass("peek", window.location.hash == "#peek");
     
   </script>
