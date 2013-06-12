@@ -159,11 +159,10 @@ body {
 }
 
 #peek .column img {
-  margin: 5px 0 0 5px;
-  width: 185px;
+  margin: 10px 0 0 5px;
+  width: 180px;
   display: block;
   background: #fff;
-  box-shadow: 0 0 3px rgba(0, 0, 0, 0.2);
 }
 
 #peek .item {
@@ -174,8 +173,10 @@ body {
   position: absolute;
   bottom: 0;
   left: 5px;
-  background: rgba(0, 0, 0, 0.8);
-  color: #fff;
+  margin-right: 5px;
+  background: rgba(255, 255, 255, 0.9);
+  border-top: 1px solid rgba(0, 0, 0, 0.2);
+  color: #000;
   font-size: 12px;
   padding: 5px;
   line-height: 14px;
@@ -193,9 +194,12 @@ body {
 #peek .description {
   opacity: 0;
 }
-
 #peek .item:hover .description {
   opacity: 1.0;
+}
+
+#peek .item:hover img {
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.4);
 }
 
 
