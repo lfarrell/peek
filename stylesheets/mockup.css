@@ -174,11 +174,11 @@ body {
   bottom: 0;
   left: 5px;
   margin-right: 5px;
-  background: rgba(255, 255, 255, 0.9);
-  border-top: 1px solid rgba(0, 0, 0, 0.2);
+  background: rgba(255, 255, 255, 0.8);
   color: #000;
   font-size: 12px;
   padding: 5px;
+  width: 170px;
   line-height: 14px;
   -webkit-font-smoothing: antialiased;
 }
@@ -194,16 +194,17 @@ body {
 #peek .description {
   opacity: 0;
 }
+
 #peek .item:hover .description {
   opacity: 1.0;
 }
 
-#peek .item:hover img {
-  box-shadow: 0 0 5px rgba(0, 0, 0, 0.4);
-}
-
 
 /* about */
+
+#about {
+  background: url(../images/outer-shadow.png) center -10px no-repeat;
+}
 
 #headline h1 {
   margin: 0 auto;
@@ -254,7 +255,36 @@ body {
   font-size: 100%;
 }
 
-#case-study-illustration-placeholder {
-  background: url(../images/rla.png);
-  height: 300px;
+#case-study-illustration img {
+  width: 420px;
+  display: block;
+}
+
+#case-study-illustration b {
+  display: block;
+  margin-bottom: 5px;
+}
+
+#case-study-illustration figure {
+  display: block;
+  position: relative;
+  width: 420px;
+  margin: 0 0 10px 0;
+  padding: 0;
+}
+
+#case-study-illustration figcaption {
+  display: block;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 400px;
+  padding: 10px;
+  margin: 0;
+  background: rgba(255, 255, 255, 0.6);
+  color: #000;
+}
+
+#case-study-illustration figure:hover figcaption {
+  background: rgba(255, 255, 255, 0.7);
 }
