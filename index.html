@@ -92,7 +92,7 @@
   <div id="footer">
   </div>
   
-  <script src="javascripts/zepto.js"></script>
+  <script src="javascripts/jquery.js"></script>
   <!-- <script src="javascripts/bez.js"></script> -->
   <script src="javascripts/underscore.js"></script>
   <script src="javascripts/peek.js"></script>
@@ -148,7 +148,7 @@
         $("#header, #about, #footer, #enter").hide();
         $(document.body).addClass("fullscreen");
       } else {
-        $("#wrap").css({ height: null });
+        $("#wrap").css({ height: "" });
         $(document.body).removeClass("fullscreen");
       }
       

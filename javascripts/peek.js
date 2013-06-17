@@ -26,18 +26,6 @@ Peek.prototype.start = function(images) {
   setInterval(_.bind(this.load, this), 100);
   setInterval(_.bind(this.fill, this), 100);
   setInterval(_.bind(this.shift, this), 4000);
-  setInterval(_.bind(this.update, this), 1000);
-  
-  // If we're hovering over a column, don't shift that column
-  
-  $(this.element).on("mouseout", ".column", _.bind(function(e) {
-    delete this.hover;
-  }, this));
-  
-  $(this.element).on("mouseover", ".column", _.bind(function(e) {
-    var element = $(e.target).closest(".column").get(0);
-    this.hover = _.find(this.columns, function(c) { return c.element === element; });
-  }, this));
   
   this.layout();
   
@@ -63,8 +51,10 @@ Peek.prototype.layout = function() {
   
   if (this.columns.length == 0) {
     var column = new Column();
+    column.delegate = this;
+    
     this.columns.push(column);
-    this.element.appendChild(column.element);
+    this.element.appendChild(column.$element[0]);
     
     addedCenter = true;
   }
@@ -82,12 +72,14 @@ Peek.prototype.layout = function() {
       var column;
       
       column = new Column();
+      column.delegate = this;
       this.columns.unshift(column);
-      this.element.insertBefore(column.element, this.element.firstChild);
+      this.element.insertBefore(column.$element[0], this.element.firstChild);
       
       column = new Column();
+      column.delegate = this;
       this.columns.push(column);
-      this.element.appendChild(column.element);
+      this.element.appendChild(column.$element[0]);
     }, this));
   } else if (currentPartialCount > partialCount) {
     _.times(currentPartialCount - partialCount, _.bind(function() {
@@ -95,11 +87,11 @@ Peek.prototype.layout = function() {
       
       column = this.columns.shift(column);
       this.images = this.images.concat(_.pluck(column.items, "spec"));
-      this.element.removeChild(column.element);
+      this.element.removeChild(column.$element[0]);
       
       column = this.columns.pop(column);
       this.images = this.images.concat(_.pluck(column.items, "spec"));
-      this.element.removeChild(column.element);
+      this.element.removeChild(column.$element[0]);
     }, this));
   }
   
@@ -107,7 +99,7 @@ Peek.prototype.layout = function() {
   
   if (addedCenter || currentPartialCount != partialCount) {
     for (var i = 0; i < this.columns.length; i++) {
-      this.columns[i].element.style.left = (i * columnWidth) + "px";
+      this.columns[i].$element[0].style.left = (i * columnWidth) + "px";
     }
   
     this.element.style.width = (columnWidth * count) + "px"
@@ -122,21 +114,11 @@ Peek.prototype.load = function() {
   
   var height = _.reduce(this.queue, function(h, i) { return h + i.getHeight(); }, 0);
   
-  // Can we fill the unfilled height?
+  // Can we fill the needed height?
   
-  var unfilled = _.reduce(this.columns, function(h, c) { return Math.max(0, c.getUnfilledHeight()); }, 0);
+  var needed = _.reduce(this.columns, function(h, c) { return Math.max(0, c.getNeededHeight()); }, 0);
   
-  if (height > unfilled) {
-    return;
-  }
-  
-  // Do we have enough height to shift?
-  
-  // FIXME: Sometimes we should be able to shift if there isn't anything in the queue -- there might already be enough filled space in a given column to make up for the space lost by the top item.
-
-  var maxTopHeight = _.max(_.invoke(this.columns, "getTopHeight"));
-  
-  if (height > maxTopHeight) {
+  if (height > needed) {
     return;
   }
   
@@ -168,22 +150,24 @@ Peek.prototype.load = function() {
 
 Peek.prototype.fill = function() {
   
-  while (this.queue.length > 0 && _.any(this.columns, function(c) { return c.getUnfilledHeight() > 0; })) {
+  while (this.queue.length > 0 && _.any(this.columns, function(c) { return c.getFreeHeight() > 0; })) {
     
-    var column = _.max(this.columns, function(c) { return c.getUnfilledHeight(); });
+    var column = _.max(this.columns, function(c) { return c.getFreeHeight(); });
     column.push(this.queue.shift());
     
   }
    
 }
 
+Peek.prototype.didRemoveItems = function(items) {
+  
+  this.images = this.images.concat(_.pluck(items, "spec"));
+  
+}
+
 Peek.prototype.shift = function() {
   
-  if (_.any(this.columns, function(c) { return c.getUnfilledHeight() > 0; })) {
-    return;
-  }
-  
-  var shiftable = _.filter(this.columns, _.bind(function(c, i) { return c !== this.hover; }, this));
+  var shiftable = _.filter(this.columns, function(c) { return c.canShift(); });
   
   if (shiftable.length == 0) {
     return;
@@ -191,102 +175,285 @@ Peek.prototype.shift = function() {
   
   var column = shiftable[Math.floor(Math.random() * shiftable.length  )];
   
-  var item = column.shift();
-  
-  if (item) {
-    this.images.push(item.spec);
-  }
-  
-  while (this.queue.length > 0 && column.getUnfilledHeight() > 0) {
-    column.push(this.queue.shift());
-  }
-  
-  this.initial = false;
-   
-}
-
-Peek.prototype.update = function() {
-  
-  _.invoke(this.columns, "update", this.initial);
+  column.shift();
    
 }
 
 
-var Column = function() {
-  this.element = $("<div class=\"column\"></div>").get(0);
+function Column() {
   
+  this.$element = $("<div class=\"column\"></div>");
   this.items = [];
-  this.top = 0;
-  this.bottom = 0;
+  this.dragging = false;
+  this.hover = false;
   
-  this.offset = -(20 + Math.floor(Math.random() * 100));
-  $(this.element).css({ "margin-top": this.offset });
+  this.$element.on("mousedown", _.bind(this.dragStart, this));
+  $(window).on("mousemove", _.bind(this.dragMove, this));
+  $(window).on("mouseup", _.bind(this.dragEnd, this));
+  this.$element.on("click", _.bind(this.onClick, this));
+  
+  this.$element.on("mouseover", _.bind(this.hoverStart, this));
+  this.$element.on("mouseout", _.bind(this.hoverEnd, this));
+  
 }
 
-Column.prototype.getTopHeight = function() {
-  return this.items[this.top] ? this.items[this.top].getHeight() - this.offset : 0;
+Column.prototype.getFreeHeight = function() {
+  
+  if (this.items.length == 0) {
+    return this.getHeight();
+  } else {
+    return this.getHeight() - (this.getItemMeasurements(this.items.length - 1).bottom + this.getOffset());
+  }
+  
 }
 
-Column.prototype.getUnfilledHeight = function() {
-  return (($(this.element).height() - this.offset) - _.reduce(this.items.slice(this.top), function(h, i) { return h + i.getHeight(); }, 0));
+Column.prototype.getNeededHeight = function() {
+  
+  if (this.items.length == 0) {
+    return this.getHeight();
+  } else {
+    return this.getFreeHeight() + this.items[0].getHeight();
+  }
+  
+}
+
+Column.prototype.canShift = function() {
+  
+  return this.items.length > 0 && !this.dragging && this.getFreeHeight() < 0 && !this.hover;
+  
+}
+
+Column.prototype.setOffset = function(offset) {
+  
+  this.$element.css({ marginTop: offset + "px" });
+  
+}
+
+Column.prototype.getOffset = function() {
+  
+  return parseInt(this.$element.css("marginTop"));
+  
+}
+
+Column.prototype.getHeight = function() {
+  
+  return this.$element.height();
+  
+}
+
+Column.prototype.prune = function(count) {
+
+  if (count < 0 || count > this.items.length) {
+    throw "Prune count out of bounds";
+  }
+
+  var offset = this.getOffset();
+  var pruned = this.items.splice(0, count);
+
+  for (var i = 0; i < pruned.length; i++) {
+    pruned[i].$element.remove();
+    offset += pruned[i].getHeight();
+  }
+
+  this.setOffset(offset);
+  
+  if (this.delegate) {
+    this.delegate.didRemoveItems(pruned);
+  }
+
+}
+
+Column.prototype.getItemMeasurements = function(index) {
+
+  if (index < 0 || index > this.items.length - 1) {
+    throw "Measurement index out of bounds";
+  }
+
+  var top = 0, bottom = this.items[0].getHeight();
+
+  for (var i = 0; i < index; i++) {
+    var height = this.items[i].getHeight();
+    top += height;
+    bottom += height;
+  }
+
+  return {
+    top: top,
+    bottom: bottom,
+    middle: top + ((bottom - top) / 2)
+  };
+
+}
+
+Column.prototype.setLayout = function(layout) {
+
+  // Stop animations
+
+  this.$element.stop();
+
+  // Animate, prune on completion
+  
+  var prune, offset;
+
+  if (layout.prune) {
+    prune = (function(context, count) { return function() { context.prune(count); } })(this, layout.prune);
+  }
+
+  if (typeof layout.top !== "undefined") {
+    offset = -this.getItemMeasurements(layout.top).top;
+  } else if (typeof layout.bottom !== "undefined") {
+    offset = this.getHeight() - this.getItemMeasurements(layout.bottom).bottom;
+  }
+
+  if (typeof offset !== "undefined") {
+    this.$element.animate({ marginTop: offset + "px" }, { complete: prune, duration: 1000 });
+  } else if (typeof prune !== "undefined") {
+    prune.call();
+  }
+
+}
+
+Column.prototype.hoverStart = function(e) {
+  
+  this.hover = true;
+  
+}
+
+Column.prototype.hoverEnd = function(e) {
+  
+  this.hover = false;
+  
+}
+
+Column.prototype.dragStart = function(e) {
+  
+  e.preventDefault();
+  
+  // Stop animations
+  
+  this.$element.stop();
+  
+  // Find the drag offset
+  
+  this.dragOffset = this.getOffset() - e.pageY;
+  this.initialDragPosition = e.pageY;
+  
+  // Start dragging
+  
+  this.dragging = true;
+    
+  this.dragMoved = false;
+  
+}
+
+Column.prototype.dragMove = function(e) {
+  
+  if (this.dragging) {
+  
+    e.preventDefault();
+    
+    this.dragMoved = true;
+    
+    this.setOffset(this.dragOffset + e.pageY);
+    
+  }
+  
+}
+
+Column.prototype.onClick = function(e) {
+  
+  if (this.dragMoved) {
+    e.preventDefault();
+  }
+  
+}
+
+Column.prototype.dragEnd = function(e) {
+  
+  if (this.dragging) {
+    
+    e.preventDefault();
+    
+    this.dragging = false;
+    
+    // Release
+    
+    // If there aren't any items
+    
+    if (this.items.length == 0) {
+      this.setLayout({ top: 0 });
+      return;
+    }
+    
+    // If the top item is below the top of the column
+    
+    var offset = this.getOffset();
+    
+    if (offset > 0) {
+      this.setLayout({ top: 0 });
+      return;
+    }
+    
+    // If there aren't any items overflowing the column
+    
+    var height = this.getHeight();
+    var bottom = this.getItemMeasurements(this.items.length - 1).bottom;
+    
+    if (bottom <= height) {
+      this.setLayout({ top: 0 });
+      return;
+    }
+    
+    // If the bottom item's bottom is above the bottom of the column, snap the column's bottom to that item. Find the first item with its bottom onscreen and prune, leaving 2 items above that item.
+    
+    if (bottom + offset <= height) {
+      for (var i = 0; i < this.items.length; i++) {
+        if (bottom - this.getItemMeasurements(i).bottom < height) {
+          break;
+        }
+      }
+      
+      this.setLayout({ bottom: this.items.length - 1, prune: Math.max(0, i - 2) });
+      
+      return;
+    }
+    
+    // Otherwise, find the first item which is more than 50% onscreen, and snap the top to that item. Prune, leaving 2 items above that item.
+    
+    for (var i = 0; i < this.items.length; i++) {
+      if (this.getItemMeasurements(i).middle + offset > 0) {
+        this.setLayout({ top: i, prune: Math.max(0, i - 2) });
+        return;
+      }
+    }
+    
+  }
+  
 }
 
 Column.prototype.push = function(item) {
+  
   this.items.push(item);
+  item.$element.appendTo(this.$element).css({ opacity: 0 }).animate({ opacity: 1 });
+  
 }
 
 Column.prototype.shift = function() {
-  var item = this.items[this.top];
   
-  this.top = Math.min(this.top + 1, this.items.length);
-  this.bottom = Math.max(this.bottom, this.top);
-  
-  return item;
-}
-
-Column.prototype.update = function(isInitialLoad) {
-  
-  var top;
-  
-  var existing = this.items.slice(0, this.bottom);
-  var added = this.items.slice(this.bottom);
-  var removed = this.items.splice(0, this.top);
-  
-  this.top = 0;
-  this.bottom = this.items.length;
-
-  // Append added items to the element
-
-  _.each(added, _.bind(function(item) {
-    this.element.appendChild(item.element);
-  }, this));
-
-  // If there were removed items, slide column so that removed items are out of view, removing them from the document when the transition finishes.
-  
-  if (removed.length > 0) {
+  if (this.items.length > 0 && !this.dragging) {
     
-    var height = _.reduce(removed, function(h, i) { return h + i.getHeight(); }, 0);
+    // Find the first item which is more than 50% onscreen, snap the top to the next item (if there is one), and prune, leaving two items above the one that is 50% onscreen.
     
-    $(this.element).animate({ "margin-top": (this.offset - height) + "px" }, 1000, "ease", _.bind(function() {
-      
-      _.each(removed, _.bind(function(item) {
-        if (item.element.parentNode) {
-          $(item.element).remove();
-        }
-      }, this));
-      
-      $(this.element).css({ "margin-top": this.offset });
-      
-    }, this));
+    var offset = this.getOffset();
+    
+    for (var i = 0; i < this.items.length; i++) {
+      if (this.getItemMeasurements(i).middle + offset > 0) {
+        this.setLayout({ top: Math.min(i + 1, this.items.length - 1), prune: Math.max(0, (i + 1) - 2) });
+        break;
+      }
+    }
     
   }
-  
-  // Animate opacity of added items
-  
-  _.each(added, _.bind(function(item) {
-    item.element.style.opacity = "0";
-    $(item.element).animate({ opacity: 1 }, 500);
-  }, this));
   
 }
 
@@ -296,8 +463,8 @@ var Item = function(image, spec) {
   this.image = image;
   this.spec = spec;
   
-  this.element = $(_.template(Item.template, spec, { variable: "spec" })).get(0);
-  $(this.element).find(".image").append(this.image);
+  this.$element = $(_.template(Item.template, spec, { variable: "spec" }));
+  this.$element.find(".image").append(this.image);
   
 }
 
