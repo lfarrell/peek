@@ -491,7 +491,7 @@ Item.get = function(spec, complete, error) {
     error();
   }, false);
   
-  img.src = "thumbnails/" + spec.path;
+  img.src = Item.base_path + spec.path;
   
 }
 
