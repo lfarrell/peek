@@ -209,7 +209,7 @@ body {
 #headline h1 {
   margin: 0 auto;
   margin-top: -1px;
-  padding-top: 30px;
+  padding-top: 35px;
   width: 960px;
   color: #000;
   font-size: 250%;
@@ -260,11 +260,6 @@ body {
   display: block;
 }
 
-#case-study-illustration b {
-  display: block;
-  margin-bottom: 5px;
-}
-
 #case-study-illustration figure {
   display: block;
   position: relative;
@@ -281,10 +276,17 @@ body {
   width: 400px;
   padding: 10px;
   margin: 0;
-  background: rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.7);
   color: #000;
+  font-size: 14px;
+}
+
+#case-study-illustration b {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 16px;
 }
 
 #case-study-illustration figure:hover figcaption {
-  background: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.8);
 }
