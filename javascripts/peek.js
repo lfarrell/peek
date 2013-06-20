@@ -1,26 +1,28 @@
-function Peek(element) {
-  this.element = $(element).get(0);
+function Peek(element, itemTemplate, itemImageSelector) {
+  
+  this.$element = $(element);
+  this.element = this.$element[0];
+  
+  this.$container = $("<div class=\"peek-container\"></div>").appendTo(this.$element);
+  this.$columns = $("<div class=\"peek-columns\"></div>").appendTo(this.$container);
+  
+  this.itemTemplate = itemTemplate;
+  this.itemImageSelector = itemImageSelector;
+  
   this.columns = [];
-  this.queue = [];
+  this.items = [];
+  this.ready = [];
   this.inprogress = 0;
-  this.initial = true;
+  
 }
 
-Peek.prototype.start = function(images) {
+Peek.prototype.add = function(items) {
   
-  // fisher-yates shuffle (in-place, returns reference)
+  this.items = this.items.concat(items);
   
-  function shuffle(a) {
-    for (var i = a.length - 2; i > 0; i--) {
-      var j = Math.floor(Math.random() * i);
-      var t = a[j];
-      a[j] = a[i];
-      a[i] = t;
-    }
-    return a;
-  }
-  
-  this.images = shuffle(images);
+}
+
+Peek.prototype.start = function() {
   
   $(window).on("resize", _.debounce(_.bind(this.layout, this), 100));
   setInterval(_.bind(this.load, this), 100);
@@ -34,7 +36,7 @@ Peek.prototype.start = function(images) {
 Peek.prototype.layout = function() {
   
   var columnWidth = 195;
-  var parentWidth = $(this.element.parentNode).width();
+  var parentWidth = this.$element.width();
   
   // Amount of space taken up by left and right columns
   
@@ -54,7 +56,7 @@ Peek.prototype.layout = function() {
     column.delegate = this;
     
     this.columns.push(column);
-    this.element.appendChild(column.$element[0]);
+    this.$columns[0].appendChild(column.$element[0]);
     
     addedCenter = true;
   }
@@ -74,24 +76,24 @@ Peek.prototype.layout = function() {
       column = new Column();
       column.delegate = this;
       this.columns.unshift(column);
-      this.element.insertBefore(column.$element[0], this.element.firstChild);
+      this.$columns[0].insertBefore(column.$element[0], this.$columns[0].firstChild);
       
       column = new Column();
       column.delegate = this;
       this.columns.push(column);
-      this.element.appendChild(column.$element[0]);
+      this.$columns[0].appendChild(column.$element[0]);
     }, this));
   } else if (currentPartialCount > partialCount) {
     _.times(currentPartialCount - partialCount, _.bind(function() {
       var column;
       
       column = this.columns.shift(column);
-      this.images = this.images.concat(_.pluck(column.items, "spec"));
-      this.element.removeChild(column.$element[0]);
+      this.didRemoveItems(column.items);
+      this.$columns[0].removeChild(column.$element[0]);
       
       column = this.columns.pop(column);
-      this.images = this.images.concat(_.pluck(column.items, "spec"));
-      this.element.removeChild(column.$element[0]);
+      this.didRemoveItems(column.items);
+      this.$columns[0].removeChild(column.$element[0]);
     }, this));
   }
   
@@ -102,8 +104,8 @@ Peek.prototype.layout = function() {
       this.columns[i].$element[0].style.left = (i * columnWidth) + "px";
     }
   
-    this.element.style.width = (columnWidth * count) + "px"
-    this.element.style.marginLeft = -Math.round((columnWidth * count) / 2) + "px";
+    this.$columns[0].style.width = (columnWidth * count) + "px"
+    this.$columns[0].style.marginLeft = -Math.round((columnWidth * count) / 2) + "px";
   }
   
 }
@@ -112,7 +114,7 @@ Peek.prototype.load = function() {
   
   // If we have enough items, don't load any more right now.
   
-  var height = _.reduce(this.queue, function(h, i) { return h + i.getHeight(); }, 0);
+  var height = _.reduce(this.ready, function(h, i) { return h + i.$element.outerHeight(); }, 0);
   
   // Can we fill the needed height?
   
@@ -128,19 +130,33 @@ Peek.prototype.load = function() {
   
   _.times(count, _.bind(function() {
     
-    var spec = this.images.shift();
+    var item = this.items.shift();
     
-    if (spec) {
+    if (item) {
+      
+      // Add completed items to the ready list. Ignore errors.
+      
+      var $element = $(this.itemTemplate(item).trim());
+      var image = $element.find(this.itemImageSelector);
+      
+      if (image) {
+        
+        image.on("load", _.bind(function() {
+          this.ready.push({ item: item, $element: $element });
+          this.inprogress--;
+        }, this));
+
+        image.on("error", _.bind(function() {
+          this.inprogress--;
+        }, this));
     
-      // Add completed items to the queue. Ignore errors.
-    
-      Item.get(
-        spec,
-        _.bind(function(item) { this.queue.push(item); this.inprogress--; }, this),
-        _.bind(function() { this.inprogress--; }, this)
-      );
-    
-      this.inprogress++;
+        this.inprogress++;
+        
+      } else {
+        
+        throw "Couldn't retrieve image for evaluated item template";
+        
+      }
       
     }
     
@@ -150,10 +166,10 @@ Peek.prototype.load = function() {
 
 Peek.prototype.fill = function() {
   
-  while (this.queue.length > 0 && _.any(this.columns, function(c) { return c.getFreeHeight() > 0; })) {
+  while (this.ready.length > 0 && _.any(this.columns, function(c) { return c.getFreeHeight() > 0; })) {
     
     var column = _.max(this.columns, function(c) { return c.getFreeHeight(); });
-    column.push(this.queue.shift());
+    column.push(this.ready.shift());
     
   }
    
@@ -161,7 +177,7 @@ Peek.prototype.fill = function() {
 
 Peek.prototype.didRemoveItems = function(items) {
   
-  this.images = this.images.concat(_.pluck(items, "spec"));
+  this.items = this.items.concat(_.pluck(items, "item"));
   
 }
 
@@ -182,8 +198,8 @@ Peek.prototype.shift = function() {
 
 function Column() {
   
-  this.$element = $("<div class=\"column\"><div class=\"column-inner\"></div></div>");
-  this.$inner = this.$element.find(".column-inner");
+  this.$element = $("<div class=\"peek-column\"></div>");
+  this.$inner = $("<div class=\"peek-column-inner\"></div>").appendTo(this.$element);
   
   this.items = [];
   this.dragging = false;
@@ -208,7 +224,7 @@ Column.prototype.getFreeHeight = function() {
   if (this.items.length == 0) {
     return this.getHeight();
   } else {
-    return this.getHeight() - (this.getItemMeasurements(this.items.length - 1).bottom + this.getOffset());
+    return (this.getHeight() - this.getOffset()) - this.getItemMeasurements(this.items.length - 1).bottom;
   }
   
 }
@@ -218,7 +234,7 @@ Column.prototype.getNeededHeight = function() {
   if (this.items.length == 0) {
     return this.getHeight();
   } else {
-    return this.getFreeHeight() + this.items[0].getHeight();
+    return this.getFreeHeight() + this.items[0].$element.outerHeight();
   }
   
 }
@@ -257,8 +273,8 @@ Column.prototype.prune = function(count) {
   var pruned = this.items.splice(0, count);
 
   for (var i = 0; i < pruned.length; i++) {
+    offset += pruned[i].$element.outerHeight();
     pruned[i].$element.remove();
-    offset += pruned[i].getHeight();
   }
 
   this.setOffset(offset);
@@ -274,15 +290,15 @@ Column.prototype.getItemMeasurements = function(index) {
   if (index < 0 || index > this.items.length - 1) {
     throw "Measurement index out of bounds";
   }
-
-  var top = 0, bottom = this.items[0].getHeight();
-
+  
+  var top = 0, bottom = this.items[0].$element.outerHeight();
+  
   for (var i = 0; i < index; i++) {
-    var height = this.items[i].getHeight();
+    var height = this.items[i].$element.outerHeight();
     top += height;
     bottom += height;
   }
-
+  
   return {
     top: top,
     bottom: bottom,
@@ -431,7 +447,7 @@ Column.prototype.dragEnd = function(e) {
 Column.prototype.push = function(item) {
   
   this.items.push(item);
-  item.$element.appendTo(this.$element).css({ opacity: 0 }).animate({ opacity: 1 });
+  item.$element.appendTo(this.$inner).css({ opacity: 0 }).animate({ opacity: 1 });
   
 }
 
@@ -451,49 +467,5 @@ Column.prototype.shift = function() {
     }
     
   }
-  
-}
-
-
-var Item = function(image, spec) {
-  
-  this.image = image;
-  this.spec = spec;
-  
-  this.$element = $(_.template(Item.template, spec, { variable: "spec" }));
-  this.$element.find(".image").append(this.image);
-  
-}
-
-Item.template = "<div class=\"item\"> \
-  <a href=\"https://cdr.lib.unc.edu/record?id=<%= spec.pid %>\"> \
-    <div class=\"image\"></div> \
-    <div class=\"description\"> \
-      <div class=\"title\"><%= spec.title %></div> \
-      <% if (spec.creators.length > 0) { %><div class=\"other\"><%= spec.creators.join(\"; \") %></div><% } %> \
-      <% if (spec.collection) { %><div class=\"other\"><%= spec.collection %></div><% } %> \
-    </div> \
-  </a> \
-</div>";
-
-Item.get = function(spec, complete, error) {
-  
-  var img = document.createElement("img");
-  
-  img.addEventListener("load", function() {
-    complete(new Item(img, spec));
-  }, false);
-  
-  img.addEventListener("error", function() {
-    error();
-  }, false);
-  
-  img.src = Item.base_path + spec.path;
-  
-}
-
-Item.prototype.getHeight = function() {
-  
-  return Math.ceil((this.image.height / this.image.width) * 185) + 10;
   
 }
