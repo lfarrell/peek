@@ -291,18 +291,14 @@ Column.prototype.getItemMeasurements = function(index) {
     throw "Measurement index out of bounds";
   }
   
-  var top = 0, bottom = this.items[0].$element.outerHeight();
-  
-  for (var i = 0; i < index; i++) {
-    var height = this.items[i].$element.outerHeight();
-    top += height;
-    bottom += height;
-  }
+  var position = this.items[index].$element.position();
+  var height = this.items[index].$element.outerHeight();
+  var offset = this.getOffset();
   
   return {
-    top: top,
-    bottom: bottom,
-    middle: top + ((bottom - top) / 2)
+    top: position.top - offset,
+    bottom: (position.top - offset) + height,
+    middle: (position.top - offset) + (height / 2)
   };
 
 }
