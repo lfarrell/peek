@@ -285,6 +285,8 @@ Column.prototype.prune = function(count) {
 
 }
 
+// Get measurements for the item at index relative to the top of the .column-inner element.
+
 Column.prototype.getItemMeasurements = function(index) {
 
   if (index < 0 || index > this.items.length - 1) {
@@ -293,7 +295,7 @@ Column.prototype.getItemMeasurements = function(index) {
   
   var position = this.items[index].$element.position();
   var height = this.items[index].$element.outerHeight();
-  var offset = this.getOffset();
+  var offset = this.getOffset() + this.nudge;
   
   return {
     top: position.top - offset,
