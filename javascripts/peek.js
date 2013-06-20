@@ -33,9 +33,31 @@ Peek.prototype.start = function() {
   
 }
 
+Peek.prototype.getColumnWidth = function() {
+  
+  return this.columns[0].$element.outerWidth();
+  
+}
+
 Peek.prototype.layout = function() {
   
-  var columnWidth = 195;
+  // If there are no columns, add a center column
+  
+  var addedCenter = false;
+  
+  if (this.columns.length == 0) {
+    
+    var column = new Column();
+    column.delegate = this;
+    
+    this.columns.push(column);
+    this.$columns[0].appendChild(column.$element[0]);
+    
+    addedCenter = true;
+    
+  }
+  
+  var columnWidth = this.getColumnWidth();
   var parentWidth = this.$element.width();
   
   // Amount of space taken up by left and right columns
@@ -47,27 +69,11 @@ Peek.prototype.layout = function() {
   var partialCount = Math.ceil(partialSpace / columnWidth);
   var count = 1 + (partialCount * 2);
   
-  // If there are no columns, add a center column
-  
-  var addedCenter = false;
-  
-  if (this.columns.length == 0) {
-    var column = new Column();
-    column.delegate = this;
-    
-    this.columns.push(column);
-    this.$columns[0].appendChild(column.$element[0]);
-    
-    addedCenter = true;
-  }
-  
   // How many columns do we currently have?
   
   var currentPartialCount = Math.ceil((this.columns.length - 1) / 2);
   
   // Add columns if we don't have enough, remove columns if we have too many
-  
-  // FIXME: It may be that filling columns is more costly than just keeping them onscreen -- so we could try never removing columns and only filling/shifting those onscreen.
   
   if (currentPartialCount < partialCount) {
     _.times(partialCount - currentPartialCount, _.bind(function() {
@@ -114,7 +120,10 @@ Peek.prototype.load = function() {
   
   // If we have enough items, don't load any more right now.
   
-  var height = _.reduce(this.ready, function(h, i) { return h + i.$element.outerHeight(); }, 0);
+  var height = _.reduce(this.ready, _.bind(function(sum, item) {
+    var image = item.$element.find(this.itemImageSelector)[0];
+    return sum + (this.getColumnWidth() * (image.height / image.width));
+  }, this), 0);
   
   // Can we fill the needed height?
   
