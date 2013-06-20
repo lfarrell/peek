@@ -33,7 +33,7 @@ Peek.prototype.start = function(images) {
 
 Peek.prototype.layout = function() {
   
-  var columnWidth = 190;
+  var columnWidth = 195;
   var parentWidth = $(this.element.parentNode).width();
   
   // Amount of space taken up by left and right columns
@@ -182,10 +182,14 @@ Peek.prototype.shift = function() {
 
 function Column() {
   
-  this.$element = $("<div class=\"column\"></div>");
+  this.$element = $("<div class=\"column\"><div class=\"column-inner\"></div></div>");
+  this.$inner = this.$element.find(".column-inner");
+  
   this.items = [];
   this.dragging = false;
   this.hover = false;
+  
+  this.nudge = -Math.floor(Math.random() * 100);
   
   this.$element.on("mousedown", _.bind(this.dragStart, this));
   $(window).on("mousemove", _.bind(this.dragMove, this));
@@ -194,6 +198,8 @@ function Column() {
   
   this.$element.on("mouseover", _.bind(this.hoverStart, this));
   this.$element.on("mouseout", _.bind(this.hoverEnd, this));
+  
+  this.setOffset(0);
   
 }
 
@@ -225,19 +231,19 @@ Column.prototype.canShift = function() {
 
 Column.prototype.setOffset = function(offset) {
   
-  this.$element.css({ marginTop: offset + "px" });
+  this.$inner.css({ marginTop: offset + this.nudge + "px" });
   
 }
 
 Column.prototype.getOffset = function() {
   
-  return parseInt(this.$element.css("marginTop"));
+  return parseInt(this.$inner.css("marginTop")) - this.nudge;
   
 }
 
 Column.prototype.getHeight = function() {
   
-  return this.$element.height();
+  return this.$element.height() - this.nudge;
   
 }
 
@@ -289,7 +295,7 @@ Column.prototype.setLayout = function(layout) {
 
   // Stop animations
 
-  this.$element.stop();
+  this.$inner.stop();
 
   // Animate, prune on completion
   
@@ -306,7 +312,7 @@ Column.prototype.setLayout = function(layout) {
   }
 
   if (typeof offset !== "undefined") {
-    this.$element.animate({ marginTop: offset + "px" }, { complete: prune, duration: 1000 });
+    this.$inner.animate({ marginTop: offset + this.nudge + "px" }, { complete: prune, duration: 1000 });
   } else if (typeof prune !== "undefined") {
     prune.call();
   }
@@ -331,7 +337,7 @@ Column.prototype.dragStart = function(e) {
   
   // Stop animations
   
-  this.$element.stop();
+  this.$inner.stop();
   
   // Find the drag offset
   
@@ -404,7 +410,7 @@ Column.prototype.dragEnd = function(e) {
       return;
     }
     
-    // If the bottom item's bottom is above the bottom of the column, snap the column's bottom to that item. Find the first item with its bottom onscreen and prune, leaving 2 items above that item.
+    // If the bottom item's bottom is above the bottom of the column, snap the column's bottom to that item. Find the first item with its bottom onscreen and prune.
     
     if (bottom + offset <= height) {
       for (var i = 0; i < this.items.length; i++) {
@@ -413,18 +419,9 @@ Column.prototype.dragEnd = function(e) {
         }
       }
       
-      this.setLayout({ bottom: this.items.length - 1, prune: Math.max(0, i - 2) });
+      this.setLayout({ bottom: this.items.length - 1, prune: Math.max(0, i) });
       
       return;
-    }
-    
-    // Otherwise, find the first item which is more than 50% onscreen, and snap the top to that item. Prune, leaving 2 items above that item.
-    
-    for (var i = 0; i < this.items.length; i++) {
-      if (this.getItemMeasurements(i).middle + offset > 0) {
-        this.setLayout({ top: i, prune: Math.max(0, i - 2) });
-        return;
-      }
     }
     
   }
@@ -442,13 +439,13 @@ Column.prototype.shift = function() {
   
   if (this.items.length > 0 && !this.dragging) {
     
-    // Find the first item which is more than 50% onscreen, snap the top to the next item (if there is one), and prune, leaving two items above the one that is 50% onscreen.
+    // Find the first item which is more than 50% onscreen, snap the top to the next item (if there is one), and prune.
     
     var offset = this.getOffset();
     
     for (var i = 0; i < this.items.length; i++) {
       if (this.getItemMeasurements(i).middle + offset > 0) {
-        this.setLayout({ top: Math.min(i + 1, this.items.length - 1), prune: Math.max(0, (i + 1) - 2) });
+        this.setLayout({ top: Math.min(i + 1, this.items.length - 1), prune: Math.max(0, i + 1) });
         break;
       }
     }
@@ -497,6 +494,6 @@ Item.get = function(spec, complete, error) {
 
 Item.prototype.getHeight = function() {
   
-  return Math.ceil((this.image.height / this.image.width) * 185) + 5;
+  return Math.ceil((this.image.height / this.image.width) * 185) + 10;
   
 }
