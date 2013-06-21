@@ -214,6 +214,7 @@ function Column() {
   this.$element.on("mousedown", _.bind(this.dragStart, this));
   $(window).on("mousemove", _.bind(this.dragMove, this));
   $(window).on("mouseup", _.bind(this.dragEnd, this));
+  this.$element.on("contextmenu", _.bind(this.dragCancel, this));
   this.$element.on("click", _.bind(this.onClick, this));
   
   this.$element.on("mouseover", _.bind(this.hoverStart, this));
@@ -392,6 +393,18 @@ Column.prototype.onClick = function(e) {
   
 }
 
+Column.prototype.dragCancel = function(e) {
+  
+  if (this.dragging) {
+  
+    this.dragging = false;
+    
+    this.release();
+    
+  }
+  
+}
+
 Column.prototype.dragEnd = function(e) {
   
   if (this.dragging) {
@@ -400,48 +413,52 @@ Column.prototype.dragEnd = function(e) {
     
     this.dragging = false;
     
-    // Release
+    this.release();
     
-    // If there aren't any items
-    
-    if (this.items.length == 0) {
-      this.setLayout({ top: 0 });
-      return;
-    }
-    
-    // If the top item is below the top of the column
-    
-    var offset = this.getOffset();
-    
-    if (offset > 0) {
-      this.setLayout({ top: 0 });
-      return;
-    }
-    
-    // If there aren't any items overflowing the column
-    
-    var height = this.getHeight();
-    var bottom = this.getItemMeasurements(this.items.length - 1).bottom;
-    
-    if (bottom <= height) {
-      this.setLayout({ top: 0 });
-      return;
-    }
-    
-    // If the bottom item's bottom is above the bottom of the column, snap the column's bottom to that item. Find the first item with its bottom onscreen and prune.
-    
-    if (bottom + offset <= height) {
-      for (var i = 0; i < this.items.length; i++) {
-        if (bottom - this.getItemMeasurements(i).bottom < height) {
-          break;
-        }
+  }
+  
+}
+
+Column.prototype.release = function() {
+  
+  // If there aren't any items
+  
+  if (this.items.length == 0) {
+    this.setLayout({ top: 0 });
+    return;
+  }
+  
+  // If the top item is below the top of the column
+  
+  var offset = this.getOffset();
+  
+  if (offset > 0) {
+    this.setLayout({ top: 0 });
+    return;
+  }
+  
+  // If there aren't any items overflowing the column
+  
+  var height = this.getHeight();
+  var bottom = this.getItemMeasurements(this.items.length - 1).bottom;
+  
+  if (bottom <= height) {
+    this.setLayout({ top: 0 });
+    return;
+  }
+  
+  // If the bottom item's bottom is above the bottom of the column, snap the column's bottom to that item. Find the first item with its bottom onscreen and prune.
+  
+  if (bottom + offset <= height) {
+    for (var i = 0; i < this.items.length; i++) {
+      if (bottom - this.getItemMeasurements(i).bottom < height) {
+        break;
       }
-      
-      this.setLayout({ bottom: this.items.length - 1, prune: Math.max(0, i) });
-      
-      return;
     }
     
+    this.setLayout({ bottom: this.items.length - 1, prune: Math.max(0, i) });
+    
+    return;
   }
   
 }
