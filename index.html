@@ -19,10 +19,6 @@
     background: #ccc;
   }
   
-  .peek-column {
-    width: 195px;
-  }
-  
   .item {
     position: relative;
   }
@@ -103,7 +99,7 @@
   
   var template = _.template($("#item-template")[0].textContent, null, { variable: "data" });
   
-  var peek = new Peek("#peek", template, ".image img");
+  var peek = new Peek("#peek", template, 195);
 
   $.getJSON("peek.json", function(items) {
     peek.add(_.shuffle(items));
