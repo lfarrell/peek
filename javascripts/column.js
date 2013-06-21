@@ -26,35 +26,48 @@ Column.prototype.getFreeHeight = function() {
   
   if (this.items.length == 0) {
     return this.getHeight();
-  } else if (this.offsetting) {
-    return this.getOffset(); // should this take into account space below the last item? can we get stuck in an offsetting state?
+  // } else if (this.offsetting) {
+  //   return this.getOffset(); // should this take into account space below the last item? can we get stuck in an offsetting state?
   } else {
-    return (this.getHeight() - this.getOffset()) - this.getItemMeasurements(this.items.length - 1).bottom;
+    // return this.getHeight() - (this.getOffset() + this.getItemMeasurements(this.items.length - 1).bottom);
+    // return (this.getHeight() - this.getOffset()) - this.getItemMeasurements(this.items.length - 1).bottom;
+    
+    // return (this.getHeight() - this.getOffset()) - Math.min(this.getHeight(), this.getItemMeasurements(this.items.length - 1).bottom);
+    
+    // var bottom = this.getOffset() + this.getItemMeasurements(this.items.length - 1).bottom;
+    // var wrapHeight = this.getHeight();
+    
+    
+    return this.getHeight() - (Math.min(this.getHeight(), this.getItemMeasurements(this.items.length - 1).bottom + this.getOffset()) - Math.max(0, this.getOffset()));
+    
+    
+    // return this.getHeight() - (this.getItemMeasurements(this.items.length - 1).bottom - this.getOffset());
+    
   }
   
 }
 
 Column.prototype.canShift = function() {
   
-  return this.items.length > 0 && !this.dragging && this.getFreeHeight() < 0 && !this.hover && !this.offsetting;
+  return this.items.length > 0 && !this.dragging && this.getFreeHeight() == 0 && !this.hover;// && !this.offsetting;
   
 }
 
 Column.prototype.setOffset = function(offset) {
   
-  this.$inner.css({ marginTop: offset + this.nudge + "px" });
+  this.$inner.css({ marginTop: offset + "px" });
   
 }
 
 Column.prototype.getOffset = function() {
   
-  return parseInt(this.$inner.css("marginTop")) - this.nudge;
+  return parseInt(this.$inner.css("marginTop"));
   
 }
 
 Column.prototype.getHeight = function() {
   
-  return this.$element.height() - this.nudge;
+  return this.$element.height();
   
 }
 
@@ -90,7 +103,7 @@ Column.prototype.getItemMeasurements = function(index) {
   
   var position = this.items[index].$element.position();
   var height = this.items[index].$element.outerHeight();
-  var offset = this.getOffset() + this.nudge;
+  var offset = this.getOffset();
   
   return {
     top: position.top - offset,
@@ -121,7 +134,7 @@ Column.prototype.setLayout = function(layout) {
   }
 
   if (typeof offset !== "undefined") {
-    this.$inner.animate({ marginTop: offset + this.nudge + "px" }, { complete: prune, duration: 1000 });
+    this.$inner.animate({ marginTop: offset + "px" }, { complete: prune, duration: 1000 });
   } else if (typeof prune !== "undefined") {
     prune.call();
   }
@@ -169,7 +182,7 @@ Column.prototype.dragMove = function(e) {
     
     this.dragMoved = true;
     
-    this.offsetting = false;
+    // this.offsetting = false;
     
     this.setOffset(this.dragOffset + e.pageY);
     
@@ -257,15 +270,17 @@ Column.prototype.release = function() {
 
 Column.prototype.push = function(item) {
   
-  if (this.offsetting) {
+  if (this.getOffset() > 0) {
     
     this.items.unshift(item);
     item.$element.prependTo(this.$inner).css({ opacity: 0 }).animate({ opacity: 1 });
     
-    this.setOffset(this.getOffset() - this.getItemMeasurements(0).bottom);
+    var height = item.$element.outerHeight();
     
-    if (this.getOffset() <= 0) {
-      this.offsetting = false;
+    this.setOffset(this.getOffset() - height);
+    
+    if (this.dragging) {
+      this.dragOffset -= height;
     }
   
   } else {
@@ -281,7 +296,7 @@ Column.prototype.shift = function() {
   
   if (this.items.length > 0 && !this.dragging) {
     
-    this.offsetting = false;
+    // this.offsetting = false;
     
     // Find the first item which is more than 50% onscreen, snap the top to the next item (if there is one), and prune.
     
@@ -289,7 +304,7 @@ Column.prototype.shift = function() {
     
     for (var i = 0; i < this.items.length; i++) {
       if (this.getItemMeasurements(i).middle + offset > 0) {
-        this.setLayout({ top: Math.min(i + 1, this.items.length - 1), prune: Math.max(0, i + 1) });
+        this.setLayout({ top: Math.min(i + 1, this.items.length - 1), prune: Math.max(0, (i + 1) - 2) });
         break;
       }
     }
@@ -301,9 +316,5 @@ Column.prototype.shift = function() {
 Column.prototype.offset = function(amt) {
   
   this.setOffset(this.getOffset() + amt);
-  
-  if (this.getOffset() > 0) {
-    this.offsetting = true;
-  }
   
 }
