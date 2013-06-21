@@ -10,15 +10,15 @@ function Peek(element, template, columnWidth) {
   this.columnWidth = columnWidth;
   
   this.columns = [];
+  this.specs = [];
   this.items = [];
-  this.ready = [];
   this.inprogress = 0;
   
 }
 
-Peek.prototype.add = function(items) {
+Peek.prototype.add = function(specs) {
   
-  this.items = this.items.concat(items);
+  this.specs = this.specs.concat(specs);
   
 }
 
@@ -35,7 +35,7 @@ Peek.prototype.start = function() {
 
 Peek.prototype.didRemoveItems = function(items) {
   
-  this.add(_.pluck(items, "item"));
+  this.add(_.pluck(items, "spec"));
   
 }
 
@@ -44,12 +44,12 @@ Peek.prototype.layout = function() {
   // Amount of space taken up by left and right columns
   
   var parentWidth = this.$element.width();
-  var partialSpace = Math.max(0, Math.ceil((parentWidth - this.columnWidth) / 2));
+  var leftRightSpace = Math.max(0, Math.ceil((parentWidth - this.columnWidth) / 2));
   
   // How many columns we want, always with one center column
   
-  var partialCount = Math.ceil(partialSpace / this.columnWidth);
-  var count = 1 + (partialCount * 2);
+  var leftRightCount = Math.ceil(leftRightSpace / this.columnWidth);
+  var count = 1 + (leftRightCount * 2);
   
   // Add and remove, and reposition
   
@@ -105,15 +105,15 @@ Peek.prototype.layout = function() {
   
 }
 
-Peek.prototype.loadItem = function(item) {
+Peek.prototype.loadItem = function(spec) {
   
-  var $element = $(this.template(item).trim());
+  var $element = $(this.template(spec).trim());
   var image = $element.find("img").eq(0);
   
   if (image) {
     
     image.on("load", _.bind(function() {
-      this.ready.push({ item: item, $element: $element });
+      this.items.push({ spec: spec, $element: $element });
       this.inprogress--;
     }, this));
 
@@ -133,9 +133,9 @@ Peek.prototype.loadItem = function(item) {
 
 Peek.prototype.load = function() {
   
-  // If we have ready items, don't load any.
+  // If we have items, don't load any.
   
-  if (this.ready.length > 0) {
+  if (this.items.length > 0) {
     return;
   }
   
@@ -144,10 +144,10 @@ Peek.prototype.load = function() {
   var count = Math.max(10 - this.inprogress, 0);
   
   for (var i = 0; i < count; i++) {
-    var item = this.items.shift();
+    var spec = this.specs.shift();
     
-    if (item) {
-      this.loadItem(item);
+    if (spec) {
+      this.loadItem(spec);
     } else {
       break;
     }
@@ -157,10 +157,10 @@ Peek.prototype.load = function() {
 
 Peek.prototype.fill = function() {
   
-  while (this.ready.length > 0 && _.any(this.columns, function(c) { return c.getFreeHeight() > 0; })) {
+  while (this.items.length > 0 && _.any(this.columns, function(c) { return c.getFreeHeight() > 0; })) {
     
     var column = _.max(this.columns, function(c) { return c.getFreeHeight(); });
-    column.push(this.ready.shift());
+    column.push(this.items.shift());
     
   }
    
