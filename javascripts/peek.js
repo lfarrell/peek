@@ -33,6 +33,12 @@ Peek.prototype.start = function() {
   
 }
 
+Peek.prototype.offset = function(amt) {
+  
+  _.invoke(this.columns, "offset", amt);
+  
+}
+
 Peek.prototype.didRemoveItems = function(items) {
   
   this.add(_.pluck(items, "spec"));

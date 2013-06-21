@@ -26,6 +26,8 @@ Column.prototype.getFreeHeight = function() {
   
   if (this.items.length == 0) {
     return this.getHeight();
+  } else if (this.offsetting) {
+    return this.getOffset(); // should this take into account space below the last item? can we get stuck in an offsetting state?
   } else {
     return (this.getHeight() - this.getOffset()) - this.getItemMeasurements(this.items.length - 1).bottom;
   }
@@ -34,7 +36,7 @@ Column.prototype.getFreeHeight = function() {
 
 Column.prototype.canShift = function() {
   
-  return this.items.length > 0 && !this.dragging && this.getFreeHeight() < 0 && !this.hover;
+  return this.items.length > 0 && !this.dragging && this.getFreeHeight() < 0 && !this.hover && !this.offsetting;
   
 }
 
@@ -167,6 +169,8 @@ Column.prototype.dragMove = function(e) {
     
     this.dragMoved = true;
     
+    this.offsetting = false;
+    
     this.setOffset(this.dragOffset + e.pageY);
     
   }
@@ -253,14 +257,31 @@ Column.prototype.release = function() {
 
 Column.prototype.push = function(item) {
   
-  this.items.push(item);
-  item.$element.appendTo(this.$inner).css({ opacity: 0 }).animate({ opacity: 1 });
+  if (this.offsetting) {
+    
+    this.items.unshift(item);
+    item.$element.prependTo(this.$inner).css({ opacity: 0 }).animate({ opacity: 1 });
+    
+    this.setOffset(this.getOffset() - this.getItemMeasurements(0).bottom);
+    
+    if (this.getOffset() <= 0) {
+      this.offsetting = false;
+    }
+  
+  } else {
+  
+    this.items.push(item);
+    item.$element.appendTo(this.$inner).css({ opacity: 0 }).animate({ opacity: 1 });
+    
+  }
   
 }
 
 Column.prototype.shift = function() {
   
   if (this.items.length > 0 && !this.dragging) {
+    
+    this.offsetting = false;
     
     // Find the first item which is more than 50% onscreen, snap the top to the next item (if there is one), and prune.
     
@@ -273,6 +294,16 @@ Column.prototype.shift = function() {
       }
     }
     
+  }
+  
+}
+
+Column.prototype.offset = function(amt) {
+  
+  this.setOffset(this.getOffset() + amt);
+  
+  if (this.getOffset() > 0) {
+    this.offsetting = true;
   }
   
 }
