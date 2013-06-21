@@ -186,7 +186,7 @@ Peek.prototype.fill = function() {
 
 Peek.prototype.didRemoveItems = function(items) {
   
-  this.items = this.items.concat(_.pluck(items, "item"));
+  this.add(_.pluck(items, "item"));
   
 }
 
