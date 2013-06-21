@@ -105,60 +105,53 @@ Peek.prototype.layout = function() {
   
 }
 
+Peek.prototype.loadItem = function(item) {
+  
+  var $element = $(this.template(item).trim());
+  var image = $element.find("img").eq(0);
+  
+  if (image) {
+    
+    image.on("load", _.bind(function() {
+      this.ready.push({ item: item, $element: $element });
+      this.inprogress--;
+    }, this));
+
+    image.on("error", _.bind(function() {
+      this.inprogress--;
+    }, this));
+
+    this.inprogress++;
+    
+  } else {
+    
+    throw "Couldn't retrieve image for evaluated item template";
+    
+  }
+  
+}
+
 Peek.prototype.load = function() {
   
-  // If we have enough items, don't load any more right now.
+  // If we have ready items, don't load any.
   
-  var height = _.reduce(this.ready, _.bind(function(sum, item) {
-    var image = item.$element.find("img")[0];
-    return sum + (this.columnWidth * (image.height / image.width));
-  }, this), 0);
-  
-  // Can we fill the needed height?
-  
-  var needed = _.reduce(this.columns, function(h, c) { return Math.max(0, c.getNeededHeight()); }, 0);
-  
-  if (height > needed) {
+  if (this.ready.length > 0) {
     return;
   }
   
-  // Don't load more than 10 at a time.
+  // Ensure that we aren't loading more than 10 items at a time.
   
   var count = Math.max(10 - this.inprogress, 0);
   
-  _.times(count, _.bind(function() {
-    
+  for (var i = 0; i < count; i++) {
     var item = this.items.shift();
     
     if (item) {
-      
-      // Add completed items to the ready list. Ignore errors.
-      
-      var $element = $(this.template(item).trim());
-      var image = $element.find("img").eq(0);
-      
-      if (image) {
-        
-        image.on("load", _.bind(function() {
-          this.ready.push({ item: item, $element: $element });
-          this.inprogress--;
-        }, this));
-
-        image.on("error", _.bind(function() {
-          this.inprogress--;
-        }, this));
-    
-        this.inprogress++;
-        
-      } else {
-        
-        throw "Couldn't retrieve image for evaluated item template";
-        
-      }
-      
+      this.loadItem(item);
+    } else {
+      break;
     }
-    
-  }, this));
+  }
    
 }
 

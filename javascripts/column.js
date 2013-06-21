@@ -32,16 +32,6 @@ Column.prototype.getFreeHeight = function() {
   
 }
 
-Column.prototype.getNeededHeight = function() {
-  
-  if (this.items.length == 0) {
-    return this.getHeight();
-  } else {
-    return this.getFreeHeight() + this.items[0].$element.outerHeight();
-  }
-  
-}
-
 Column.prototype.canShift = function() {
   
   return this.items.length > 0 && !this.dragging && this.getFreeHeight() < 0 && !this.hover;
