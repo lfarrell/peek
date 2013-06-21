@@ -33,80 +33,74 @@ Peek.prototype.start = function() {
   
 }
 
+Peek.prototype.didRemoveItems = function(items) {
+  
+  this.add(_.pluck(items, "item"));
+  
+}
+
 Peek.prototype.layout = function() {
-  
-  // If there are no columns, add a center column
-  
-  var addedCenter = false;
-  
-  if (this.columns.length == 0) {
-    
-    var column = new Column();
-    column.delegate = this;
-    
-    this.columns.push(column);
-    this.$columns[0].appendChild(column.$element[0]);
-    
-    addedCenter = true;
-    
-  }
-  
-  var parentWidth = this.$element.width();
   
   // Amount of space taken up by left and right columns
   
-  var partialSpace = Math.ceil((parentWidth - this.columnWidth) / 2);
+  var parentWidth = this.$element.width();
+  var partialSpace = Math.max(0, Math.ceil((parentWidth - this.columnWidth) / 2));
   
-  // How many columns we want
+  // How many columns we want, always with one center column
   
   var partialCount = Math.ceil(partialSpace / this.columnWidth);
   var count = 1 + (partialCount * 2);
   
-  // How many columns do we currently have?
+  // Add and remove, and reposition
   
-  var currentPartialCount = Math.ceil((this.columns.length - 1) / 2);
+  if (this.columns.length != count) {
   
-  // Add columns if we don't have enough, remove columns if we have too many
+    // Add columns if we don't have enough
   
-  if (currentPartialCount < partialCount) {
-    _.times(partialCount - currentPartialCount, _.bind(function() {
+    while (this.columns.length < count) {
+    
       var column;
-      
+    
       column = new Column();
       column.delegate = this;
-      this.columns.unshift(column);
-      this.$columns[0].insertBefore(column.$element[0], this.$columns[0].firstChild);
-      column.$element[0].style.width = this.columnWidth + "px";
-      
-      column = new Column();
-      column.delegate = this;
-      this.columns.push(column);
-      this.$columns[0].appendChild(column.$element[0]);
-      column.$element[0].style.width = this.columnWidth + "px";
-    }, this));
-  } else if (currentPartialCount > partialCount) {
-    _.times(currentPartialCount - partialCount, _.bind(function() {
-      var column;
-      
-      column = this.columns.shift(column);
-      this.didRemoveItems(column.items);
-      this.$columns[0].removeChild(column.$element[0]);
-      
-      column = this.columns.pop(column);
-      this.didRemoveItems(column.items);
-      this.$columns[0].removeChild(column.$element[0]);
-    }, this));
-  }
-  
-  // Set position of columns if counts changed
-  
-  if (addedCenter || currentPartialCount != partialCount) {
-    for (var i = 0; i < this.columns.length; i++) {
-      this.columns[i].$element[0].style.left = (i * this.columnWidth) + "px";
+      column.$element.css("width", this.columnWidth + "px");
+    
+      if (this.columns.length % 2 == 0) {
+        this.columns.unshift(column);
+        this.$columns[0].insertBefore(column.$element[0], this.$columns[0].firstChild);
+      } else {
+        this.columns.push(column);
+        this.$columns[0].appendChild(column.$element[0]);
+      }
+    
     }
   
-    this.$columns[0].style.width = (this.columnWidth * count) + "px"
-    this.$columns[0].style.marginLeft = -Math.round((this.columnWidth * count) / 2) + "px";
+    // Remove columns if we have too many
+  
+    while (this.columns.length > count) {
+    
+      var column;
+    
+      if (this.columns.length % 2 == 0) {
+        column = this.columns.shift();
+      } else {
+        column = this.columns.pop();
+      }
+    
+      this.didRemoveItems(column.items);
+      this.$columns[0].removeChild(column.$element[0]);
+    
+    }
+    
+    // Adjust positioning
+
+    for (var i = 0; i < this.columns.length; i++) {
+      this.columns[i].$element.css("left", (i * this.columnWidth) + "px");
+    }
+  
+    this.$columns.css("width", (this.columnWidth * count) + "px");
+    this.$columns.css("marginLeft", -Math.round((this.columnWidth * count) / 2) + "px");
+    
   }
   
 }
@@ -177,12 +171,6 @@ Peek.prototype.fill = function() {
     
   }
    
-}
-
-Peek.prototype.didRemoveItems = function(items) {
-  
-  this.add(_.pluck(items, "item"));
-  
 }
 
 Peek.prototype.shift = function() {
