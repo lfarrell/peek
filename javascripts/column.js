@@ -8,6 +8,8 @@ function Column() {
   this.backfilling = false;
   this.hover = false;
   
+  this.nudge = -(50 + Math.floor(Math.random() * 30));
+  
   this.$element.on("mousedown", _.bind(this.dragStart, this));
   $(window).on("mousemove", _.bind(this.dragMove, this));
   $(window).on("mouseup", _.bind(this.dragEnd, this));
@@ -41,19 +43,19 @@ Column.prototype.canShift = function() {
 
 Column.prototype.setOffset = function(offset) {
   
-  this.$inner.css({ marginTop: offset + "px" });
+  this.$inner.css({ marginTop: (offset + this.nudge) + "px" });
   
 }
 
 Column.prototype.getOffset = function() {
   
-  return parseInt(this.$inner.css("marginTop"));
+  return parseInt(this.$inner.css("marginTop")) - this.nudge;
   
 }
 
 Column.prototype.getHeight = function() {
   
-  return this.$element.height();
+  return this.$element.height() - this.nudge;
   
 }
 
@@ -89,7 +91,7 @@ Column.prototype.getItemMeasurements = function(index) {
   
   var position = this.items[index].$element.position();
   var height = this.items[index].$element.outerHeight();
-  var offset = this.getOffset();
+  var offset = this.getOffset() + this.nudge;
   
   return {
     top: position.top - offset,
@@ -121,7 +123,7 @@ Column.prototype.setLayout = function(layout) {
   
 
   if (typeof offset !== "undefined") {
-    this.$inner.animate({ marginTop: offset + "px" }, { complete: complete, duration: 1000 });
+    this.$inner.animate({ marginTop: (offset + this.nudge) + "px" }, { complete: complete, duration: 1000 });
   } else if (typeof prune !== "undefined") {
     complete.call();
   }
