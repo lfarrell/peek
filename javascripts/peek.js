@@ -26,7 +26,7 @@ Peek.prototype.start = function() {
   
   $(window).on("resize", _.debounce(_.bind(this.layout, this), 100));
   setInterval(_.bind(this.load, this), 100);
-  setInterval(_.bind(this.fill, this), 100);
+  setInterval(_.bind(this.fill, this), 500);
   setInterval(_.bind(this.shift, this), 4000);
   
   this.layout();

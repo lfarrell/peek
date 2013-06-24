@@ -5,9 +5,10 @@ function Column() {
   
   this.items = [];
   this.dragging = false;
+  this.backfilling = false;
   this.hover = false;
   
-  this.nudge = -Math.floor(Math.random() * 100);
+  // this.nudge = -Math.floor(Math.random() * 100);
   
   this.$element.on("mousedown", _.bind(this.dragStart, this));
   $(window).on("mousemove", _.bind(this.dragMove, this));
@@ -26,30 +27,17 @@ Column.prototype.getFreeHeight = function() {
   
   if (this.items.length == 0) {
     return this.getHeight();
-  // } else if (this.offsetting) {
-  //   return this.getOffset(); // should this take into account space below the last item? can we get stuck in an offsetting state?
+  } else if (this.backfilling) {
+    return this.getOffset();
   } else {
-    // return this.getHeight() - (this.getOffset() + this.getItemMeasurements(this.items.length - 1).bottom);
-    // return (this.getHeight() - this.getOffset()) - this.getItemMeasurements(this.items.length - 1).bottom;
-    
-    // return (this.getHeight() - this.getOffset()) - Math.min(this.getHeight(), this.getItemMeasurements(this.items.length - 1).bottom);
-    
-    // var bottom = this.getOffset() + this.getItemMeasurements(this.items.length - 1).bottom;
-    // var wrapHeight = this.getHeight();
-    
-    
-    return this.getHeight() - (Math.min(this.getHeight(), this.getItemMeasurements(this.items.length - 1).bottom + this.getOffset()) - Math.max(0, this.getOffset()));
-    
-    
-    // return this.getHeight() - (this.getItemMeasurements(this.items.length - 1).bottom - this.getOffset());
-    
+    return (this.getHeight() - this.getOffset()) - this.getItemMeasurements(this.items.length - 1).bottom;
   }
   
 }
 
 Column.prototype.canShift = function() {
   
-  return this.items.length > 0 && !this.dragging && this.getFreeHeight() == 0 && !this.hover;// && !this.offsetting;
+  return this.items.length > 0 && !this.dragging && this.getFreeHeight() <= 0 && !this.hover && !this.backfilling;
   
 }
 
@@ -121,10 +109,17 @@ Column.prototype.setLayout = function(layout) {
 
   // Animate, prune on completion
   
-  var prune, offset;
+  var complete, offset;
 
   if (layout.prune) {
-    prune = (function(context, count) { return function() { context.prune(count); } })(this, layout.prune);
+    complete = (function(context, count) { return function() {
+      context.prune(count);
+      context.backfilling = false;
+    } })(this, layout.prune);
+  } else {
+    complete = (function(context) { return function() {
+      context.backfilling = false;
+    } })(this);
   }
 
   if (typeof layout.top !== "undefined") {
@@ -134,9 +129,9 @@ Column.prototype.setLayout = function(layout) {
   }
 
   if (typeof offset !== "undefined") {
-    this.$inner.animate({ marginTop: offset + "px" }, { complete: prune, duration: 1000 });
+    this.$inner.animate({ marginTop: offset + "px" }, { complete: complete, duration: 1000 });
   } else if (typeof prune !== "undefined") {
-    prune.call();
+    complete.call();
   }
 
 }
@@ -182,7 +177,7 @@ Column.prototype.dragMove = function(e) {
     
     this.dragMoved = true;
     
-    // this.offsetting = false;
+    this.backfilling = false;
     
     this.setOffset(this.dragOffset + e.pageY);
     
@@ -193,7 +188,9 @@ Column.prototype.dragMove = function(e) {
 Column.prototype.onClick = function(e) {
   
   if (this.dragMoved) {
+    
     e.preventDefault();
+    
   }
   
 }
@@ -252,25 +249,11 @@ Column.prototype.release = function() {
     return;
   }
   
-  // If the bottom item's bottom is above the bottom of the column, snap the column's bottom to that item. Find the first item with its bottom onscreen and prune.
-  
-  if (bottom + offset <= height) {
-    for (var i = 0; i < this.items.length; i++) {
-      if (bottom - this.getItemMeasurements(i).bottom < height) {
-        break;
-      }
-    }
-    
-    this.setLayout({ bottom: this.items.length - 1, prune: Math.max(0, i) });
-    
-    return;
-  }
-  
 }
 
 Column.prototype.push = function(item) {
   
-  if (this.getOffset() > 0) {
+  if (this.backfilling && this.getOffset() > 0) {
     
     this.items.unshift(item);
     item.$element.prependTo(this.$inner).css({ opacity: 0 }).animate({ opacity: 1 });
@@ -279,8 +262,8 @@ Column.prototype.push = function(item) {
     
     this.setOffset(this.getOffset() - height);
     
-    if (this.dragging) {
-      this.dragOffset -= height;
+    if (this.getOffset() < 0) {
+      this.backfilling = false;
     }
   
   } else {
@@ -294,9 +277,7 @@ Column.prototype.push = function(item) {
 
 Column.prototype.shift = function() {
   
-  if (this.items.length > 0 && !this.dragging) {
-    
-    // this.offsetting = false;
+  if (this.items.length > 0 && !this.dragging && !this.backfilling) {
     
     // Find the first item which is more than 50% onscreen, snap the top to the next item (if there is one), and prune.
     
@@ -304,7 +285,7 @@ Column.prototype.shift = function() {
     
     for (var i = 0; i < this.items.length; i++) {
       if (this.getItemMeasurements(i).middle + offset > 0) {
-        this.setLayout({ top: Math.min(i + 1, this.items.length - 1), prune: Math.max(0, (i + 1) - 2) });
+        this.setLayout({ top: Math.min(i + 1, this.items.length - 1), prune: Math.max(0, i + 1) });
         break;
       }
     }
@@ -315,6 +296,9 @@ Column.prototype.shift = function() {
 
 Column.prototype.offset = function(amt) {
   
+  this.$inner.stop();
+  
   this.setOffset(this.getOffset() + amt);
+  this.backfilling = true;
   
 }
