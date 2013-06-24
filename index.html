@@ -190,13 +190,13 @@
     
   });
   
-  // $(window).scroll(function() {
-  //   if (!$(document.body).hasClass("peek")) {
-  //     $("#peek .peek-columns").css({
-  //       marginTop: ($(window).scrollTop() * 0.125) + "px"
-  //     });
-  //   }
-  // });
+  $(window).scroll(function() {
+    if (!$(document.body).hasClass("peek")) {
+      $("#peek .peek-columns").css({
+        marginTop: ($(window).scrollTop() * 0.125) + "px"
+      });
+    }
+  });
   
   </script>
   
