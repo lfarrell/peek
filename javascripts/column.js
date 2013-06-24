@@ -8,8 +8,6 @@ function Column() {
   this.backfilling = false;
   this.hover = false;
   
-  // this.nudge = -Math.floor(Math.random() * 100);
-  
   this.$element.on("mousedown", _.bind(this.dragStart, this));
   $(window).on("mousemove", _.bind(this.dragMove, this));
   $(window).on("mouseup", _.bind(this.dragEnd, this));
@@ -112,14 +110,7 @@ Column.prototype.setLayout = function(layout) {
   var complete, offset;
 
   if (layout.prune) {
-    complete = (function(context, count) { return function() {
-      context.prune(count);
-      context.backfilling = false;
-    } })(this, layout.prune);
-  } else {
-    complete = (function(context) { return function() {
-      context.backfilling = false;
-    } })(this);
+    complete = (function(context, count) { return function() { context.prune(count); } })(this, layout.prune);
   }
 
   if (typeof layout.top !== "undefined") {
@@ -127,6 +118,7 @@ Column.prototype.setLayout = function(layout) {
   } else if (typeof layout.bottom !== "undefined") {
     offset = this.getHeight() - this.getItemMeasurements(layout.bottom).bottom;
   }
+  
 
   if (typeof offset !== "undefined") {
     this.$inner.animate({ marginTop: offset + "px" }, { complete: complete, duration: 1000 });
