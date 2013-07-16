@@ -161,6 +161,8 @@ Column.prototype.dragStart = function(e) {
     
   this.dragMoved = false;
   
+  this.$element.addClass("peek-dragging");
+  
 }
 
 Column.prototype.dragMove = function(e) {
@@ -216,6 +218,8 @@ Column.prototype.dragEnd = function(e) {
 }
 
 Column.prototype.release = function() {
+  
+  this.$element.removeClass("peek-dragging");
   
   // If there aren't any items
   
