@@ -180,7 +180,7 @@ Peek.prototype.shift = function() {
     return;
   }
   
-  var column = shiftable[Math.floor(Math.random() * shiftable.length  )];
+  var column = shiftable[Math.floor(Math.random() * shiftable.length)];
   
   column.shift();
    
