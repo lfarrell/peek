@@ -124,10 +124,8 @@
   $("#exit").on("click", function() {
     $(document.body).removeClass("peek");
     
-    _.defer(function() {
-      var offset = $("#peek").offset().top - window.scrollY;
-      peek.offset(-offset);
-    });
+    var offset = $("#peek").offset().top - window.scrollY;
+    peek.offset(-offset);
   });
   
   </script>
