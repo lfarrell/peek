@@ -123,7 +123,7 @@ Column.prototype.setLayout = function(layout) {
   
 
   if (typeof offset !== "undefined") {
-    this.$inner.animate({ marginTop: (offset + this.nudge) + "px" }, { complete: complete, duration: 1000 });
+    this.$inner.animate({ marginTop: (offset + this.nudge) + "px" }, { complete: complete, duration: 1500 });
   } else if (typeof prune !== "undefined") {
     complete.call();
   }
