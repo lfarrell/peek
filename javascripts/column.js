@@ -256,7 +256,7 @@ Column.prototype.push = function(item) {
     
     this.setOffset(this.getOffset() - height);
     
-    if (this.getOffset() < 0) {
+    if (this.getOffset() <= 0) {
       this.backfilling = false;
     }
   
@@ -290,9 +290,19 @@ Column.prototype.shift = function() {
 
 Column.prototype.offset = function(amt) {
   
-  this.$inner.stop();
+  var offset = this.getOffset() + amt;
+
+  if (offset > 0) {
   
-  this.setOffset(this.getOffset() + amt);
-  this.backfilling = true;
+    this.$inner.stop();
+  
+    this.setOffset(offset);
+    this.backfilling = true;
+    
+  } else {
+    
+    this.backfilling = false;
+    
+  }
   
 }
