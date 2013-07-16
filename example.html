@@ -2,14 +2,9 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>peek</title>
+  <title>Peek</title>
   <link rel="stylesheet" href="stylesheets/peek.css">
   <style>
-  
-  body {
-    margin: 0;
-    padding: 0;
-  }
   
   #peek {
     position: relative;
@@ -21,87 +16,7 @@
   }
   
   .item {
-    position: relative;
-  }
-
-  .item a {
-    display: block;
-    padding: 5px;
-  }
-
-  .item img {
-    display: block;
-    background: #000;
-  }
-
-  .description {
-    position: absolute;
-    bottom: 5px;
-    width: 185px;
-    background: rgba(255, 255, 255, 0.8);
-    color: #000;
-    font-family: helvetica, verdana, sans-serif;
-    font-size: 12px;
-    line-height: 14px;
-    -webkit-font-smoothing: antialiased;
-  }
-
-  .description .title {
-    font-weight: bold;
-    margin: 5px;
-  }
-
-  .description .other {
-    margin: 5px;
-  }
-
-  .description {
-    opacity: 0;
-  }
-
-  .item:hover .description {
-    opacity: 1.0;
-  }
-
-  .item:hover .image {
-    box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
-  }
-  
-  #enter {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 1;
-    cursor: pointer;
-  }
-  
-  #exit {
-    position: absolute;
-    top: 0px;
-    left: 0px;
-    padding: 20px;
-    background: #000;
-    color: #fff;
-    z-index: 1;
-    cursor: pointer;
-  }
-  
-  body.peek { overflow: hidden; }
-  
-  #exit { display: none; }
-  body.peek #exit { display: inherit; }
-  
-  #enter { display: inherit; }
-  body.peek #enter { display: none; }
-  
-  body.peek #peek {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    width: 150px;
   }
   
   </style>
@@ -114,10 +29,7 @@
   
   <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
   
-  <div id="peek">
-    <div id="enter"></div>
-    <div id="exit">Back</div>
-  </div>
+  <div id="peek"></div>
   
   <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
   
@@ -132,18 +44,7 @@
   <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
   
   <script type="text/template" id="item-template">
-<div class="item">
-  <a href="https://cdr.lib.unc.edu/record?id=<%= data.pid %>">
-    <div class="image">
-      <img src="thumbnails/<%= data.path %>">
-    </div>
-    <div class="description">
-      <div class="title"><%= data.title %></div>
-      <% if (data.creators.length > 0) { %><div class="other"><%= data.creators.join("; ") %></div><% } %>
-      <% if (data.collection) { %><div class="other"><%= data.collection %></div><% } %>
-    </div>
-  </a>
-</div>
+<div class="item" style="background: <%= data.color %>; height: <%= data.height %>px;"></div>
 </script>
   
   <script src="javascripts/jquery.js"></script>
@@ -154,49 +55,20 @@
   
   var template = _.template($("#item-template")[0].textContent, null, { variable: "data" });
   
-  var peek = new Peek("#peek", template, 195);
+  var peek = new Peek("#peek", template, 150);
 
-  $.getJSON("peek.json", function(items) {
-    peek.add(_.shuffle(items));
-    peek.start();
-  });
+  var colors = ["red", "green", "blue", "yellow", "orange", "purple"];
+  var items = [];
   
-  
-  var scroll;
-  
-  $("#enter").on("click", function() {
-    
-    scroll = [window.scrollX, window.scrollY];
-    var offset = $("#peek").offset().top - window.scrollY;
-    
-    peek.offset(offset);
-    
-    $(document.body).addClass("peek");
-    
-  });
-  
-  $("#exit").on("click", function() {
-    
-    $(document.body).removeClass("peek");
-    
-    if (scroll) {
-      window.scrollTo.apply(null, scroll);
-    }
-    
-    _.defer(function() {
-      var offset = $("#peek").offset().top - window.scrollY;
-      peek.offset(-offset);
+  for (var i = 0; i < 100; i++) {
+    items.push({
+      color: colors[Math.floor(Math.random() * colors.length)],
+      height: 100 + Math.floor(Math.random() * 200)
     });
-    
-  });
+  }
   
-  $(window).scroll(function() {
-    if (!$(document.body).hasClass("peek")) {
-      $("#peek .peek-columns").css({
-        marginTop: ($(window).scrollTop() * 0.125) + "px"
-      });
-    }
-  });
+  peek.add(items);
+  peek.start();
   
   </script>
   
