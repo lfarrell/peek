@@ -6,6 +6,11 @@
   <link rel="stylesheet" href="stylesheets/peek.css">
   <style>
   
+  body {
+    padding: 0;
+    margin: 0;
+  }
+  
   #peek {
     position: relative;
     width: 100%;
@@ -19,6 +24,43 @@
     width: 150px;
   }
   
+  #enter {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    cursor: pointer;
+  }
+  
+  #exit {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    padding: 20px;
+    background: #000;
+    color: #fff;
+    z-index: 1;
+    cursor: pointer;
+  }
+  
+  body.peek { overflow: hidden; }
+  
+  #exit { display: none; }
+  body.peek #exit { display: inherit; }
+  
+  #enter { display: inherit; }
+  body.peek #enter { display: none; }
+  
+  body.peek #peek {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+  }
+  
   </style>
 </head>
 <body>
@@ -29,7 +71,10 @@
   
   <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
   
-  <div id="peek"></div>
+  <div id="peek">
+    <div id="enter"></div>
+    <div id="exit">Back</div>
+  </div>
   
   <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
   
@@ -54,7 +99,6 @@
   <script>
   
   var template = _.template($("#item-template")[0].textContent, null, { variable: "data" });
-  
   var peek = new Peek("#peek", template, 150);
 
   var colors = ["red", "green", "blue", "yellow", "orange", "purple"];
@@ -69,6 +113,22 @@
   
   peek.add(items);
   peek.start();
+  
+  $("#enter").on("click", function() {
+    var offset = $("#peek").offset().top - window.scrollY;
+    peek.offset(offset);
+    
+    $(document.body).addClass("peek");
+  });
+  
+  $("#exit").on("click", function() {
+    $(document.body).removeClass("peek");
+    
+    _.defer(function() {
+      var offset = $("#peek").offset().top - window.scrollY;
+      peek.offset(-offset);
+    });
+  });
   
   </script>
   

@@ -292,17 +292,13 @@ Column.prototype.offset = function(amt) {
   
   var offset = this.getOffset() + amt;
 
+  this.$inner.stop();
+  this.setOffset(offset);
+
   if (offset > 0) {
-  
-    this.$inner.stop();
-  
-    this.setOffset(offset);
     this.backfilling = true;
-    
   } else {
-    
     this.backfilling = false;
-    
   }
   
 }
