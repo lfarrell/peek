@@ -116,7 +116,7 @@ Peek.prototype.loadItem = function(spec) {
   var $element = $(this.template(spec).trim());
   var image = $element.find("img").eq(0);
   
-  if (image) {
+  if (image.length == 1) {
     
     image.on("load", _.bind(function() {
       this.items.push({ spec: spec, $element: $element });
@@ -131,7 +131,7 @@ Peek.prototype.loadItem = function(spec) {
     
   } else {
     
-    throw "Couldn't retrieve image for evaluated item template";
+    this.items.push({ spec: spec, $element: $element });
     
   }
   
