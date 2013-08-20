@@ -121,9 +121,12 @@ Column.prototype.setLayout = function(layout) {
     offset = this.getHeight() - this.getItemMeasurements(layout.bottom).bottom;
   }
   
-
   if (typeof offset !== "undefined") {
-    this.$inner.animate({ marginTop: (offset + this.nudge) + "px" }, { complete: complete, duration: 1500 });
+    if (!layout.pin) {
+      offset += this.nudge;
+    }
+    
+    this.$inner.animate({ marginTop: offset + "px" }, { complete: complete, duration: 1500 });
   } else if (typeof prune !== "undefined") {
     complete.call();
   }
@@ -221,23 +224,23 @@ Column.prototype.release = function() {
   
   this.$element.removeClass("peek-dragging");
   
-  // If there aren't any items
+  // If there aren't any items, set the top to the first item
   
   if (this.items.length == 0) {
     this.setLayout({ top: 0 });
     return;
   }
   
-  // If the top item is below the top of the column
+  // If the top item is below the top of the column, set the top to the first item and pin the column to that item's top
   
   var offset = this.getOffset();
   
   if (offset > 0) {
-    this.setLayout({ top: 0 });
+    this.setLayout({ top: 0, pin: true });
     return;
   }
   
-  // If there aren't any items overflowing the column
+  // If there aren't any items overflowing the column, set the top to the first item
   
   var height = this.getHeight();
   var bottom = this.getItemMeasurements(this.items.length - 1).bottom;
